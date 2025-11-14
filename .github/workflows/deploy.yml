@@ -24,10 +24,13 @@ jobs:
     - name: Build project
       run: npm run build
     
+    - name: List build output
+      run: ls -la
+    
     - name: Deploy to Netlify
       uses: nwtgck/actions-netlify@v3.0
       with:
-        publish-dir: './out'
+        publish-dir: './.next'
         production-branch: main
         github-token: ${{ secrets.GITHUB_TOKEN }}
         deploy-message: "Deploy from GitHub Actions"
