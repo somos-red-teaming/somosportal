@@ -9,6 +9,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: 'SOMOS Civic Lab - AI Red-Teaming Platform',
   description: 'Democratizing AI governance through structured public participation in red teaming exercises',
+  generator: 'v0.app',
   icons: {
     icon: [
       {
