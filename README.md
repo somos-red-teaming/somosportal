@@ -1,21 +1,35 @@
-# SOMOS AI Red-Teaming Platform
+# SOMOS Civic Lab - AI Red-Teaming Platform
 
-Public AI Red-Teaming Platform for civic participation in AI safety testing.
+> Democratizing AI governance through structured public participation in red teaming exercises.
 
-## Project Status
-🚧 **Week 1 - Foundation Setup** 🚧
+## 🎯 Current Sprint: Week 1-2 Foundation
 
-- [x] GitHub repository created
-- [x] Next.js 14 + TypeScript + Tailwind setup
-- [ ] Supabase project creation
-- [ ] Database schema implementation
-- [ ] Basic authentication system
+### ✅ Completed
+- [x] Project repository setup and environment configuration
+- [x] Next.js project initialization with TypeScript and Tailwind CSS  
+- [x] CI/CD pipeline with GitHub Actions → Netlify deployment
+- [x] Documentation structure setup
 
-## Tech Stack
-- **Frontend:** Next.js 14, TypeScript, Tailwind CSS
-- **Backend:** Supabase, PostgreSQL
-- **AI APIs:** OpenAI, Anthropic Claude, Google Gemini, Custom
-- **Deployment:** Netlify
+### 🔄 In Progress
+- [ ] Supabase project creation and database schema implementation
+- [ ] Basic authentication system setup
+
+### 📋 Next Up
+- [ ] User registration and login flows
+- [ ] Environment variables and secrets management
+
+## 🚀 Quick Start
+
+```bash
+npm install --legacy-peer-deps
+npm run dev
+```
+
+## 📚 Documentation
+Detailed documentation available in [`/docs`](./docs/README.md)
+
+## 🛠 Tech Stack
+Next.js 16 • TypeScript • Tailwind CSS • Supabase • Netlify
 
 ---
-*SOMOS Civic Lab - November 2025*
+**Latest Update:** Documentation structure created, ready for Supabase setup
