@@ -18,4 +18,4 @@ Public AI Red-Teaming Platform for civic participation in AI safety testing.
 - **Deployment:** Vercel
 
 ---
-*SOMOS Civic Lab - November 2024*
+*SOMOS Civic Lab - November 2025*
