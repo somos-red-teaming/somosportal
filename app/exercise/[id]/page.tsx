@@ -12,6 +12,14 @@ import { Header } from '@/components/header'
 import { AlertCircle, Send, Flag, CheckCircle2, Info } from 'lucide-react'
 import { useState } from 'react'
 
+export async function generateStaticParams() {
+  return [
+    { id: '1' },
+    { id: '2' },
+    { id: '3' }
+  ]
+}
+
 const models = [
   { id: 'alpha', name: 'Model Alpha', selected: false },
   { id: 'beta', name: 'Model Beta', selected: false },
