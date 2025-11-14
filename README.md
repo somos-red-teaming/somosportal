@@ -6,7 +6,7 @@ Public AI Red-Teaming Platform for civic participation in AI safety testing.
 🚧 **Week 1 - Foundation Setup** 🚧
 
 - [x] GitHub repository created
-- [ ] Next.js 14 + TypeScript + Tailwind setup
+- [x] Next.js 14 + TypeScript + Tailwind setup
 - [ ] Supabase project creation
 - [ ] Database schema implementation
 - [ ] Basic authentication system
