@@ -14,8 +14,8 @@ Public AI Red-Teaming Platform for civic participation in AI safety testing.
 ## Tech Stack
 - **Frontend:** Next.js 14, TypeScript, Tailwind CSS
 - **Backend:** Supabase, PostgreSQL
-- **AI APIs:** OpenAI, Anthropic Claude, Google Gemini
-- **Deployment:** Vercel
+- **AI APIs:** OpenAI, Anthropic Claude, Google Gemini, Custom
+- **Deployment:** Netlify
 
 ---
 *SOMOS Civic Lab - November 2025*
