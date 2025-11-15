@@ -5,7 +5,6 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 const nextConfig = {
-  // Remove static export - use regular Netlify deployment
   trailingSlash: true,
   images: {
     unoptimized: true
@@ -13,6 +12,10 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // Disable static optimization for pages that use authentication
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  }
 }
 
 export default nextConfig
