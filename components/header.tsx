@@ -2,11 +2,22 @@
 
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Moon, Sun } from 'lucide-react'
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Moon, Sun, User, LogOut, Settings } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { useAuth } from '@/hooks/useAuth'
+import { useRouter } from 'next/navigation'
 
 export function Header() {
   const [isDark, setIsDark] = useState(false)
+  const { user, signOut, loading } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
     const dark = document.documentElement.classList.contains('dark')
@@ -16,6 +27,11 @@ export function Header() {
   const toggleTheme = () => {
     document.documentElement.classList.toggle('dark')
     setIsDark(!isDark)
+  }
+
+  const handleSignOut = async () => {
+    await signOut()
+    router.push('/')
   }
 
   return (
@@ -44,12 +60,46 @@ export function Header() {
           <Button variant="ghost" size="icon" onClick={toggleTheme}>
             {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
-          <Button variant="ghost" asChild>
-            <Link href="/login">Sign In</Link>
-          </Button>
-          <Button asChild className="hidden md:inline-flex">
-            <Link href="/register">Get Started</Link>
-          </Button>
+          
+          {loading ? (
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          ) : user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <User className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard" className="flex items-center">
+                    <User className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="flex items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Button variant="ghost" asChild>
+                <Link href="/login">Sign In</Link>
+              </Button>
+              <Button asChild className="hidden md:inline-flex">
+                <Link href="/register">Get Started</Link>
+              </Button>
+            </>
+          )}
         </div>
       </div>
     </header>
