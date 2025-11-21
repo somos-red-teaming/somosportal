@@ -80,12 +80,16 @@ export default function ProfilePage() {
     try {
       setIsLoading(true)
       
+      console.log('Loading profile for user:', user?.id)
+      
       // Get user data
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('auth_user_id', user?.id)
         .single()
+
+      console.log('User data:', userData, 'User error:', userError)
 
       if (userError && userError.code !== 'PGRST116') {
         throw userError
@@ -97,6 +101,8 @@ export default function ProfilePage() {
         .select('*')
         .eq('user_id', userData?.id)
         .single()
+
+      console.log('Profile data:', profileData, 'Profile error:', profileError)
 
       if (profileError && profileError.code !== 'PGRST116') {
         throw profileError
@@ -260,11 +266,18 @@ export default function ProfilePage() {
         if (updateError) throw updateError
       }
 
-      // Upsert profile record
+      // Update existing profile record
+      console.log('Updating profile data:', {
+        user_id: userData!.id,
+        organization: profile.organization,
+        job_title: profile.job_title,
+        location: profile.location,
+        preferred_language: profile.preferred_language
+      })
+
       const { error: profileError } = await supabase
         .from('user_profiles')
-        .upsert({
-          user_id: userData!.id,
+        .update({
           organization: profile.organization || null,
           job_title: profile.job_title || null,
           location: profile.location || null,
@@ -276,14 +289,25 @@ export default function ProfilePage() {
           privacy_settings: profile.privacy_settings,
           updated_at: new Date().toISOString()
         })
+        .eq('user_id', userData!.id)
 
-      if (profileError) throw profileError
+      if (profileError) {
+        console.error('Profile save error:', JSON.stringify(profileError, null, 2))
+        throw profileError
+      }
+
+      console.log('Profile updated successfully')
 
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
       console.error('Error saving profile:', err)
-      setError('Failed to save profile. Please try again.')
+      console.error('Error details:', JSON.stringify(err, null, 2))
+      if (err && typeof err === 'object' && 'message' in err) {
+        setError(`Failed to save profile: ${err.message}`)
+      } else {
+        setError('Failed to save profile. Please try again.')
+      }
     } finally {
       setIsSaving(false)
     }
@@ -611,7 +635,10 @@ export default function ProfilePage() {
             </Card>
           </div>
 
-          <div className="mt-8 flex justify-end">
+          <div className="mt-8 flex justify-end items-center gap-4">
+            {success && (
+              <p className="text-sm text-green-600">Profile updated successfully!</p>
+            )}
             <Button onClick={handleSave} disabled={isSaving} size="lg">
               <Save className="h-4 w-4 mr-2" />
               {isSaving ? 'Saving...' : 'Save Profile'}
