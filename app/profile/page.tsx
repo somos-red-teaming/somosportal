@@ -12,7 +12,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { useState, useEffect } from 'react'
-import { User, Save, AlertCircle } from 'lucide-react'
+import { User, Save, AlertCircle, Mail } from 'lucide-react'
 
 interface UserProfile {
   // Users table
@@ -64,6 +64,7 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [expertiseInput, setExpertiseInput] = useState('')
+  const [passwordResetSent, setPasswordResetSent] = useState(false)
 
   // Load user profile data
   useEffect(() => {
@@ -122,6 +123,23 @@ export default function ProfilePage() {
       setError('Failed to load profile data')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handlePasswordReset = async () => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(user?.email || '', {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      })
+      
+      if (error) {
+        setError(error.message)
+      } else {
+        setPasswordResetSent(true)
+        setTimeout(() => setPasswordResetSent(false), 5000)
+      }
+    } catch (err) {
+      setError('Failed to send password reset email')
     }
   }
 
@@ -292,6 +310,17 @@ export default function ProfilePage() {
             </div>
           )}
 
+          {passwordResetSent && (
+            <div className="mb-6 rounded-md bg-blue-50 p-4 border border-blue-200">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-blue-600" />
+                <p className="text-sm text-blue-600">
+                  Password reset link sent to {user?.email}. Check your email to reset your password.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Basic Information */}
             <Card>
@@ -344,6 +373,44 @@ export default function ProfilePage() {
                   />
                   <p className="text-xs text-muted-foreground">
                     Separate multiple areas with commas
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Security Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Security Settings</CardTitle>
+                <CardDescription>Manage your account security</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Email Address</Label>
+                  <Input
+                    value={user?.email || ''}
+                    disabled
+                    className="bg-muted"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Contact support to change your email address
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Password</Label>
+                  <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                    <span className="text-sm text-muted-foreground">••••••••</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePasswordReset}
+                    >
+                      Change Password
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    We'll send a reset link to your email
                   </p>
                 </div>
               </CardContent>
@@ -403,45 +470,6 @@ export default function ProfilePage() {
                       <SelectItem value="pt">Portuguese</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Social Links */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Social Links</CardTitle>
-                <CardDescription>Connect your social profiles</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="website_url">Website</Label>
-                  <Input
-                    id="website_url"
-                    value={profile.website_url}
-                    onChange={(e) => setProfile({ ...profile, website_url: e.target.value })}
-                    placeholder="https://yourwebsite.com"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="linkedin_url">LinkedIn</Label>
-                  <Input
-                    id="linkedin_url"
-                    value={profile.linkedin_url}
-                    onChange={(e) => setProfile({ ...profile, linkedin_url: e.target.value })}
-                    placeholder="https://linkedin.com/in/yourprofile"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="twitter_handle">Twitter Handle</Label>
-                  <Input
-                    id="twitter_handle"
-                    value={profile.twitter_handle}
-                    onChange={(e) => setProfile({ ...profile, twitter_handle: e.target.value })}
-                    placeholder="@yourusername"
-                  />
                 </div>
               </CardContent>
             </Card>
