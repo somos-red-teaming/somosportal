@@ -64,7 +64,10 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [expertiseInput, setExpertiseInput] = useState('')
-  const [passwordResetSent, setPasswordResetSent] = useState(false)
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
 
   // Load user profile data
   useEffect(() => {
@@ -126,20 +129,42 @@ export default function ProfilePage() {
     }
   }
 
-  const handlePasswordReset = async () => {
+  const handlePasswordChange = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError('All password fields are required')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setError('New password must be at least 6 characters')
+      return
+    }
+
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(user?.email || '', {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      })
+      setError(null)
       
+      // Update password using Supabase auth
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      })
+
       if (error) {
         setError(error.message)
       } else {
-        setPasswordResetSent(true)
-        setTimeout(() => setPasswordResetSent(false), 5000)
+        setSuccess(true)
+        setShowPasswordForm(false)
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmPassword('')
+        setTimeout(() => setSuccess(false), 3000)
       }
     } catch (err) {
-      setError('Failed to send password reset email')
+      setError('Failed to update password')
     }
   }
 
@@ -310,17 +335,6 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {passwordResetSent && (
-            <div className="mb-6 rounded-md bg-blue-50 p-4 border border-blue-200">
-              <div className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-blue-600" />
-                <p className="text-sm text-blue-600">
-                  Password reset link sent to {user?.email}. Check your email to reset your password.
-                </p>
-              </div>
-            </div>
-          )}
-
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Basic Information */}
             <Card>
@@ -399,19 +413,60 @@ export default function ProfilePage() {
 
                 <div className="space-y-2">
                   <Label>Password</Label>
-                  <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
-                    <span className="text-sm text-muted-foreground">••••••••</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handlePasswordReset}
-                    >
-                      Change Password
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    We'll send a reset link to your email
-                  </p>
+                  {!showPasswordForm ? (
+                    <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                      <span className="text-sm text-muted-foreground">••••••••</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowPasswordForm(true)}
+                      >
+                        Change Password
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <Input
+                        type="password"
+                        placeholder="Current password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                      />
+                      <Input
+                        type="password"
+                        placeholder="New password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                      />
+                      <Input
+                        type="password"
+                        placeholder="Confirm new password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handlePasswordChange}
+                          disabled={isSaving}
+                          size="sm"
+                        >
+                          Update Password
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setShowPasswordForm(false)
+                            setCurrentPassword('')
+                            setNewPassword('')
+                            setConfirmPassword('')
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
