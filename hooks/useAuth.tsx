@@ -71,10 +71,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
+    
+    if (!error && data.user) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('is_active')
+        .eq('auth_user_id', data.user.id)
+        .single()
+      
+      if (userData && !userData.is_active) {
+        await supabase.auth.signOut()
+        window.location.href = '/account-deactivated'
+        return { error: null }
+      }
+    }
+    
     return { error }
   }
 

@@ -9,24 +9,31 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Moon, Sun, User, LogOut, Settings } from 'lucide-react'
+import { Moon, Sun, User, LogOut, Settings, Shield } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
+import { useRole } from '@/hooks/useRole'
 import { useRouter } from 'next/navigation'
 
 export function Header() {
   const [isDark, setIsDark] = useState(false)
   const { user, signOut, loading } = useAuth()
+  const { isAdmin } = useRole()
   const router = useRouter()
 
   useEffect(() => {
-    const dark = document.documentElement.classList.contains('dark')
+    const saved = localStorage.getItem('theme')
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const dark = saved === 'dark' || (!saved && prefersDark)
     setIsDark(dark)
+    document.documentElement.classList.toggle('dark', dark)
   }, [])
 
   const toggleTheme = () => {
-    document.documentElement.classList.toggle('dark')
-    setIsDark(!isDark)
+    const newDark = !isDark
+    setIsDark(newDark)
+    document.documentElement.classList.toggle('dark', newDark)
+    localStorage.setItem('theme', newDark ? 'dark' : 'light')
   }
 
   const handleSignOut = async () => {
@@ -48,12 +55,11 @@ export function Header() {
           <Link href="/exercises" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Exercises
           </Link>
-          <Link href="/about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            About
-          </Link>
-          <Link href="/docs" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Documentation
-          </Link>
+          {isAdmin && (
+            <Link href="/admin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Admin
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-4">
@@ -83,6 +89,14 @@ export function Header() {
                     Profile
                   </Link>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="flex items-center">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Admin Panel
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />

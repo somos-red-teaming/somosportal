@@ -120,3 +120,11 @@ jspm_packages/
 # Temporary folders
 tmp/
 temp/
+
+# testing
+tests/
+test-results/
+playwright-report/
+
+# Sentry Config File
+.env.sentry-build-plugin

@@ -2,39 +2,41 @@
 
 > Democratizing AI governance through structured public participation in red teaming exercises.
 
-## 🎉 Current Sprint: Week 1-2 Foundation 100% Complete ✅
+## 🎉 Current Sprint: Week 3-4 RBAC & Admin 100% Complete ✅
+
+### ✅ Week 3-4 RBAC & Admin Complete (100%)
+- [x] Role-based access control (Admin/Participant)
+- [x] Admin dashboard with platform statistics
+- [x] User management (search, pagination, role toggle, activate/deactivate)
+- [x] Exercise management CRUD (create, edit, delete)
+- [x] Dynamic exercises loaded from database
+- [x] Deactivated user blocking with redirect page
+- [x] Dark/light mode persistence (localStorage)
+- [x] Search and pagination for admin tables
+- [x] Playwright E2E testing setup
+- [x] Sentry error monitoring integration
+- [x] Snyk security scanning (GitHub integration)
 
 ### ✅ Week 1-2 Foundation Complete (100%)
-- [x] Project repository setup and environment configuration
 - [x] Next.js 14 + TypeScript + Tailwind CSS initialization  
-- [x] **Migration from Netlify to Cloudflare Pages** (enhanced performance)
-- [x] Professional domain (somos.website) operational
-- [x] **Complete database schema with 9 production-ready tables**
-- [x] **Row Level Security (RLS) policies implemented**
-- [x] **Authentication triggers and user management system**
-- [x] **Email/password authentication system fully functional**
-- [x] **User registration and login flows implemented**
-- [x] **Protected routes and session management**
-- [x] **Google OAuth integration**
-- [x] **GitHub OAuth integration**
-- [x] **Complete OAuth flows verified and working**
-- [x] **Comprehensive user profile system** (database integration)
-- [x] **Password reset functionality** (email-based recovery)
-- [x] **Production deployment with authentication working**
-- [x] **Dashboard and profile pages for authenticated users**
-- [x] **Exercise interface ready for database integration**
+- [x] Cloudflare Pages deployment (somos.website)
+- [x] Complete database schema with 9 production-ready tables
+- [x] Row Level Security (RLS) policies implemented
+- [x] Email/password authentication system
+- [x] Google & GitHub OAuth integration
+- [x] User profile system with database integration
+- [x] Password reset functionality
 
-### 📋 Next Up (Week 3-4)
-- [ ] Role-based access control (Admin/Participant)
-- [ ] User profile management interface
-- [ ] Admin panel structure
-- [ ] Connect exercise system to database
-- [ ] Security testing and hardening
+### 📋 Next Up (Week 5-6)
+- [ ] Exercise lifecycle management
+- [ ] Participant assignment to exercises
+- [ ] Exercise guidelines and instructions system
+- [ ] Exercise status tracking and updates
 
 ## 🚀 Live Demo
 - **Production Site:** [somos.website](https://somos.website)
-- **Status:** Authentication system operational
-- **Features:** User registration, login, protected routes, dashboard
+- **Status:** Full authentication + Admin system operational
+- **Features:** User management, exercise CRUD, role-based access
 
 ## 🚀 Quick Start
 
@@ -43,51 +45,68 @@ npm install --legacy-peer-deps
 npm run dev
 ```
 
-**Live Site:** https://somos.website
+## 🧪 Testing
 
-## 🏗 Major Week 1-2 Achievements
+```bash
+# Run E2E tests
+npm run test:e2e
 
-### **Complete Authentication System** 🔐
-- **Email/Password Auth:** Full registration and login flows
-- **Session Management:** Secure user sessions with context provider
-- **Protected Routes:** Authentication-required pages
-- **User Interface:** Dashboard, profile, and navigation components
-- **Production Ready:** Live authentication on somos.website
+# Run E2E tests with UI
+npm run test:e2e:ui
+```
 
-### **Production-Ready Database** 🗄️
-- **9 Core Tables:** users, user_profiles, ai_models, exercises, interactions, flags, participation_stats
-- **Security First:** Row Level Security with admin/moderator/participant roles
-- **Performance Optimized:** Strategic indexes and query optimization
-- **AI Integration Ready:** Multi-provider model support with blind testing
+## 🏗 Week 3-4 Achievements
 
-### **Professional Infrastructure** 🚀
-- **Domain:** somos.website with SSL and CDN
-- **CI/CD Pipeline:** GitHub → Cloudflare Pages deployment
-- **Static Export:** Optimized for performance and SEO
-- **Global Performance:** Enhanced with Cloudflare's edge network
+### **Role-Based Access Control** 🔐
+- **Two Roles:** Admin and Participant
+- **useRole Hook:** Fetches user role from database
+- **AdminRoute Component:** Protects admin-only pages
+- **Header Integration:** Dynamic navigation based on role
 
-### **Development Foundation** 💻
-- **Modern Stack:** Next.js 16, TypeScript, Tailwind CSS
-- **Component Library:** Radix UI with Lucide icons
-- **Documentation:** Comprehensive milestone-based docs
-- **Version Control:** Git workflow with automated deployment
+### **Admin Dashboard** 📊
+- **Platform Stats:** Users, exercises, flags, interactions counts
+- **Quick Actions:** Links to user and exercise management
+- **Protected Access:** Only accessible to admin users
+
+### **User Management** 👥
+- **User List:** View all registered users
+- **Search:** Filter by email or name
+- **Pagination:** 10 users per page
+- **Role Toggle:** Switch users between admin/participant
+- **Account Status:** Activate/deactivate user accounts
+- **Deactivation Flow:** Blocked users redirected to info page
+
+### **Exercise Management** 📝
+- **Full CRUD:** Create, read, update, delete exercises
+- **Form Fields:** Title, description, category, difficulty, status, guidelines
+- **Status Options:** Draft, active, paused, completed
+- **Search & Pagination:** Filter and navigate large lists
+
+### **Testing & Monitoring** 🧪
+- **Playwright:** E2E testing for critical user flows
+- **Sentry:** Real-time error monitoring and tracking
+- **Snyk:** Automated security vulnerability scanning
 
 ## 📚 Documentation
 Detailed documentation available in [`/docs`](./docs/README.md)
 
 ## 🛠 Tech Stack
-Next.js 14 • TypeScript • Tailwind CSS • Supabase • Cloudflare Pages • PostgreSQL
-
-## 🗄️ Database Schema
-- **Supabase Project:** https://barcrmxjgisydxjtnolv.supabase.co
-- **Tables:** 9 production-ready tables with security policies
-- **Authentication:** Automatic user creation triggers
-- **AI Models:** Pre-configured OpenAI, Claude, Gemini support
+- **Frontend:** Next.js 16 • TypeScript • Tailwind CSS • Radix UI
+- **Backend:** Supabase (PostgreSQL + Auth)
+- **Hosting:** Cloudflare Pages
+- **Testing:** Playwright
+- **Monitoring:** Sentry
+- **Security:** Snyk
 
 ## 📊 Progress Overview
-- **Week 1-2:** 100% Complete ✅ (OAuth integration, profile system, password reset)
-- **Overall Timeline:** Ahead of schedule with comprehensive foundation
-- **Next Milestone:** Begin Week 3-4 features (role-based access, admin panel)
+| Week | Focus | Status |
+|------|-------|--------|
+| 1-2 | Foundation & Auth | ✅ 100% Complete |
+| 3-4 | RBAC & Admin | ✅ 100% Complete |
+| 5-6 | Exercise System | ⏳ Up Next |
+| 7-8 | AI Integration | ⏳ Planned |
+| 9 | Flagging System | ⏳ Planned |
+| 10 | Analytics & Deploy | ⏳ Planned |
 
 ---
-**Latest Update:** Week 1-2 Foundation 100% Complete - Full authentication system with OAuth, profile management, and password reset operational
+**Latest Update:** December 3, 2025 - Week 3-4 RBAC & Admin 100% Complete
