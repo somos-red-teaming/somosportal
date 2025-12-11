@@ -259,9 +259,12 @@ SENTRY_AUTH_TOKEN=sntrys_eyJ...
 - Participation statistics
 
 ### Week 7-8: AI Integration
-- Create custom API routes (`/api/ai/chat`)
+- Create custom API routes (`/api/ai/chat`, `/api/ai/image`)
 - Connect to OpenAI, Anthropic, Google APIs
+- Image generation: Nano Banana (Gemini Image), DALL-E 3
 - Implement blind model assignment
+- API selection per exercise
+- Chat turn limits
 - Add Swagger/OpenAPI documentation
 
 ---

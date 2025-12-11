@@ -110,7 +110,7 @@ export default function AdminUsersPage() {
                           <th className="text-left py-3 px-2">Role</th>
                           <th className="text-left py-3 px-2">Status</th>
                           <th className="text-left py-3 px-2">Joined</th>
-                          <th className="text-left py-3 px-2">Actions</th>
+                          <th className="text-left py-3 px-2 text-green-600 font-semibold">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -128,10 +128,10 @@ export default function AdminUsersPage() {
                             </td>
                             <td className="py-3 px-2">{new Date(user.created_at).toLocaleDateString()}</td>
                             <td className="py-3 px-2 space-x-2">
-                              <Button size="sm" variant="outline" onClick={() => toggleRole(user.id, user.role)}>
+                              <Button size="sm" variant={user.role === 'admin' ? 'secondary' : 'default'} onClick={() => toggleRole(user.id, user.role)}>
                                 {user.role === 'admin' ? 'Make Participant' : 'Make Admin'}
                               </Button>
-                              <Button size="sm" variant="outline" onClick={() => toggleActive(user.id, user.is_active)}>
+                              <Button size="sm" variant={user.is_active ? 'destructive' : 'default'} onClick={() => toggleActive(user.id, user.is_active)}>
                                 {user.is_active ? 'Deactivate' : 'Activate'}
                               </Button>
                             </td>

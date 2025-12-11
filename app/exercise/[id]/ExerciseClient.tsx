@@ -11,8 +11,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Slider } from '@/components/ui/slider'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Header } from '@/components/header'
-import { AlertCircle, Send, Flag, Info, ArrowLeft } from 'lucide-react'
+import { AlertCircle, Send, Flag, Info, ArrowLeft, Users, Calendar, CheckCircle } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
 
 interface Exercise {
@@ -22,11 +23,21 @@ interface Exercise {
   guidelines: string
   category: string
   difficulty_level: string
+  start_date: string | null
+  end_date: string | null
+  max_participants: number | null
 }
 
 interface AIModel {
   id: string
   display_name: string
+}
+
+interface Participation {
+  id: string
+  status: string
+  progress: { interactions: number; flags_submitted: number }
+  started_at: string
 }
 
 const flagCategories = [
@@ -41,11 +52,14 @@ const flagCategories = [
 
 export default function ExerciseClient() {
   const params = useParams()
+  const { user } = useAuth()
   const [exercise, setExercise] = useState<Exercise | null>(null)
   const [models, setModels] = useState<AIModel[]>([])
+  const [participation, setParticipation] = useState<Participation | null>(null)
+  const [participantCount, setParticipantCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  
+
   const [selectedModels, setSelectedModels] = useState<string[]>([])
   const [prompt, setPrompt] = useState('')
   const [responses, setResponses] = useState<Array<{ model: string; text: string }>>([])
@@ -55,24 +69,66 @@ export default function ExerciseClient() {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [exerciseRes, modelsRes] = await Promise.all([
-          supabase.from('exercises').select('*').eq('id', params.id).single(),
-          supabase.from('ai_models').select('id, display_name').eq('is_active', true),
-        ])
-
-        if (exerciseRes.error) throw exerciseRes.error
-        setExercise(exerciseRes.data)
-        setModels(modelsRes.data || [])
-      } catch {
-        setError('Exercise not found')
-      } finally {
-        setLoading(false)
-      }
-    }
     fetchData()
-  }, [params.id])
+  }, [params.id, user])
+
+  const fetchData = async () => {
+    try {
+      const [exerciseRes, modelsRes] = await Promise.all([
+        supabase.from('exercises').select('*').eq('id', params.id).single(),
+        supabase.from('ai_models').select('id, display_name').eq('is_active', true),
+      ])
+
+      if (exerciseRes.error) throw exerciseRes.error
+      setExercise(exerciseRes.data)
+      setModels(modelsRes.data || [])
+
+      // Get participant count using RLS-safe function
+      const { data: countData } = await supabase
+        .rpc('get_exercise_participant_count', { exercise_uuid: params.id })
+      setParticipantCount(countData || 0)
+
+      // Check if user is participating
+      if (user) {
+        const { data: userData } = await supabase.from('users').select('id').eq('auth_user_id', user.id).single()
+        if (userData) {
+          const { data: part } = await supabase
+            .from('exercise_participation')
+            .select('*')
+            .eq('exercise_id', params.id)
+            .eq('user_id', userData.id)
+            .single()
+          setParticipation(part)
+        }
+      }
+    } catch {
+      setError('Exercise not found')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const isExerciseFull = exercise?.max_participants && participantCount >= exercise.max_participants
+
+  const handleJoin = async () => {
+    if (!user) return
+    
+    // Check if exercise is full
+    if (exercise?.max_participants && participantCount >= exercise.max_participants) {
+      alert('This exercise is full and cannot accept more participants.')
+      return
+    }
+    
+    const { data: userData } = await supabase.from('users').select('id').eq('auth_user_id', user.id).single()
+    if (!userData) return
+
+    await supabase.from('exercise_participation').insert({
+      exercise_id: params.id,
+      user_id: userData.id,
+      status: 'active',
+    })
+    fetchData()
+  }
 
   const handleModelToggle = (modelId: string) => {
     if (selectedModels.includes(modelId)) {
@@ -85,11 +141,11 @@ export default function ExerciseClient() {
   const handleSendPrompt = () => {
     if (!prompt.trim() || selectedModels.length === 0) return
     setIsLoading(true)
-    
+
     setTimeout(() => {
       const newResponses = selectedModels.map(modelId => ({
         model: models.find(m => m.id === modelId)?.display_name || 'Unknown',
-        text: `[Demo] Placeholder response for "${prompt}". Real AI integration in Week 5-6.`
+        text: `[Demo] Placeholder response for "${prompt}". Real AI integration in Week 7-8.`
       }))
       setResponses(newResponses)
       setIsLoading(false)
@@ -131,116 +187,149 @@ export default function ExerciseClient() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
       <div className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <Button variant="ghost" size="sm" asChild className="mb-4">
             <Link href="/exercises"><ArrowLeft className="h-4 w-4 mr-2" />Back</Link>
           </Button>
-          <h1 className="mb-2 text-3xl font-bold">{exercise.title}</h1>
-          <p className="text-muted-foreground">{exercise.description}</p>
-          <div className="flex gap-2 mt-2">
-            <Badge>{exercise.category}</Badge>
-            <Badge variant="outline" className="capitalize">{exercise.difficulty_level}</Badge>
-          </div>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-3">
-            <Card className="sticky top-20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Info className="h-5 w-5" />Guidelines</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[400px] pr-4">
-                  <div className="text-sm text-muted-foreground whitespace-pre-wrap">{exercise.guidelines}</div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="lg:col-span-6">
-            <Card className="mb-6">
-              <CardHeader>
-                <CardTitle>Model Selection</CardTitle>
-                <CardDescription>Select up to 2 models for blind comparison</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {models.length === 0 ? (
-                  <p className="text-muted-foreground">No AI models available.</p>
-                ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    {models.map((model) => (
-                      <div
-                        key={model.id}
-                        className={`flex items-center space-x-2 rounded-lg border p-4 cursor-pointer ${
-                          selectedModels.includes(model.id) ? 'border-primary bg-primary/5' : 'hover:bg-accent'
-                        }`}
-                        onClick={() => handleModelToggle(model.id)}
-                      >
-                        <Checkbox checked={selectedModels.includes(model.id)} />
-                        <Label className="cursor-pointer">{model.display_name}</Label>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="mb-6">
-              <CardHeader><CardTitle>Test Prompt</CardTitle></CardHeader>
-              <CardContent>
-                <Textarea placeholder="Enter your prompt..." value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3} className="mb-4" />
-                <Button onClick={handleSendPrompt} disabled={selectedModels.length === 0 || !prompt.trim() || isLoading} className="w-full">
-                  {isLoading ? 'Loading...' : <><Send className="mr-2 h-4 w-4" />Send</>}
-                </Button>
-              </CardContent>
-            </Card>
-
-            {responses.length > 0 && (
-              <div className="space-y-4">
-                {responses.map((r, i) => (
-                  <Card key={i}>
-                    <CardHeader><CardTitle className="text-base">{r.model}</CardTitle></CardHeader>
-                    <CardContent><p className="text-sm">{r.text}</p></CardContent>
-                  </Card>
-                ))}
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="mb-2 text-3xl font-bold">{exercise.title}</h1>
+              <p className="text-muted-foreground">{exercise.description}</p>
+              <div className="flex gap-2 mt-2">
+                <Badge>{exercise.category}</Badge>
+                <Badge variant="outline" className="capitalize">{exercise.difficulty_level}</Badge>
+                {participation && <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />Participating</Badge>}
               </div>
+            </div>
+            {!participation && user && (
+              <Button onClick={handleJoin} disabled={isExerciseFull}>
+                {isExerciseFull ? 'Exercise Full' : 'Join Exercise'}
+              </Button>
+            )}
+            {!user && (
+              <Button asChild><Link href="/login">Sign in to Join</Link></Button>
             )}
           </div>
-
-          <div className="lg:col-span-3">
-            <Card className="sticky top-20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Flag className="h-5 w-5" />Flag Issue</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Category</Label>
-                  <ScrollArea className="h-[180px] rounded-md border p-2 mt-1">
-                    {flagCategories.map((cat) => (
-                      <div key={cat.value} className={`flex items-center gap-2 p-2 rounded cursor-pointer ${flagCategory === cat.value ? 'bg-primary/10' : 'hover:bg-accent'}`} onClick={() => setFlagCategory(cat.value)}>
-                        <Checkbox checked={flagCategory === cat.value} />
-                        <span className="text-sm">{cat.label}</span>
-                      </div>
-                    ))}
-                  </ScrollArea>
-                </div>
-                <div>
-                  <div className="flex justify-between"><Label>Severity</Label><span className="text-sm">{severity[0]}/10</span></div>
-                  <Slider value={severity} onValueChange={setSeverity} min={1} max={10} className="mt-2" />
-                </div>
-                <div>
-                  <Label>Comment</Label>
-                  <Textarea placeholder="Describe the issue..." value={flagComment} onChange={(e) => setFlagComment(e.target.value)} rows={3} className="mt-1" />
-                </div>
-                <Button onClick={handleSubmitFlag} className="w-full" disabled={!flagCategory || !flagComment}>
-                  <Flag className="mr-2 h-4 w-4" />Submit Flag
-                </Button>
-              </CardContent>
-            </Card>
+          <div className="flex gap-4 mt-4 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              {participantCount} participant{participantCount !== 1 ? 's' : ''}
+              {exercise.max_participants ? ` / ${exercise.max_participants} max` : ''}
+            </span>
+            {(exercise.start_date || exercise.end_date) && (
+              <span className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                {exercise.start_date?.split('T')[0] || 'Now'} - {exercise.end_date?.split('T')[0] || 'Ongoing'}
+              </span>
+            )}
           </div>
         </div>
+
+        {participation ? (
+          <div className="grid gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-3">
+              <Card className="sticky top-20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Info className="h-5 w-5" />Guidelines</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px] pr-4">
+                    <div className="text-sm text-muted-foreground whitespace-pre-wrap">{exercise.guidelines}</div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="lg:col-span-6">
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle>Model Selection</CardTitle>
+                  <CardDescription>Select up to 2 models for blind comparison</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {models.length === 0 ? (
+                    <p className="text-muted-foreground">No AI models available.</p>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-4">
+                      {models.map((model) => (
+                        <div key={model.id} className={`flex items-center space-x-2 rounded-lg border p-4 cursor-pointer ${selectedModels.includes(model.id) ? 'border-primary bg-primary/5' : 'hover:bg-accent'}`} onClick={() => handleModelToggle(model.id)}>
+                          <Checkbox checked={selectedModels.includes(model.id)} />
+                          <Label className="cursor-pointer">{model.display_name}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="mb-6">
+                <CardHeader><CardTitle>Test Prompt</CardTitle></CardHeader>
+                <CardContent>
+                  <Textarea placeholder="Enter your prompt..." value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3} className="mb-4" />
+                  <Button onClick={handleSendPrompt} disabled={selectedModels.length === 0 || !prompt.trim() || isLoading} className="w-full">
+                    {isLoading ? 'Loading...' : <><Send className="mr-2 h-4 w-4" />Send</>}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {responses.length > 0 && (
+                <div className="space-y-4">
+                  {responses.map((r, i) => (
+                    <Card key={i}>
+                      <CardHeader><CardTitle className="text-base">{r.model}</CardTitle></CardHeader>
+                      <CardContent><p className="text-sm">{r.text}</p></CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="lg:col-span-3">
+              <Card className="sticky top-20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Flag className="h-5 w-5" />Flag Issue</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Category</Label>
+                    <ScrollArea className="h-[180px] rounded-md border p-2 mt-1">
+                      {flagCategories.map((cat) => (
+                        <div key={cat.value} className={`flex items-center gap-2 p-2 rounded cursor-pointer ${flagCategory === cat.value ? 'bg-primary/10' : 'hover:bg-accent'}`} onClick={() => setFlagCategory(cat.value)}>
+                          <Checkbox checked={flagCategory === cat.value} />
+                          <span className="text-sm">{cat.label}</span>
+                        </div>
+                      ))}
+                    </ScrollArea>
+                  </div>
+                  <div>
+                    <div className="flex justify-between"><Label>Severity</Label><span className="text-sm">{severity[0]}/10</span></div>
+                    <Slider value={severity} onValueChange={setSeverity} min={1} max={10} className="mt-2" />
+                  </div>
+                  <div>
+                    <Label>Comment</Label>
+                    <Textarea placeholder="Describe the issue..." value={flagComment} onChange={(e) => setFlagComment(e.target.value)} rows={3} className="mt-1" />
+                  </div>
+                  <Button onClick={handleSubmitFlag} className="w-full" disabled={!flagCategory || !flagComment}>
+                    <Flag className="mr-2 h-4 w-4" />Submit Flag
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        ) : (
+          <Card className="text-center py-12">
+            <CardContent>
+              <Info className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h2 className="text-xl font-semibold mb-2">Join to Start Testing</h2>
+              <p className="text-muted-foreground mb-4">You need to join this exercise to access the testing interface.</p>
+              <div className="bg-muted p-4 rounded-lg text-left max-w-xl mx-auto">
+                <h3 className="font-medium mb-2">Guidelines Preview:</h3>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{exercise.guidelines.slice(0, 300)}{exercise.guidelines.length > 300 ? '...' : ''}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   )

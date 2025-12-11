@@ -167,9 +167,15 @@ erDiagram
     EXERCISES {
         uuid id PK
         string title
+        string description
         string category
+        string difficulty_level
         string status
-        jsonb instructions
+        text guidelines
+        timestamptz start_date
+        timestamptz end_date
+        integer max_participants
+        text[] target_models
         uuid created_by FK
         timestamp created_at
     }

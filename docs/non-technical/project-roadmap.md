@@ -3,7 +3,7 @@
 **Project Vision:** Democratizing AI governance through structured public participation in red teaming exercises
 
 **Timeline:** 10-Week Development Cycle  
-**Current Status:** 🎉 Week 3-4 Complete - RBAC & Admin System
+**Current Status:** 🎉 Week 5-6 Complete - Exercise System
 
 ---
 
@@ -47,11 +47,18 @@ The SOMOS Civic Lab AI Red-Teaming Platform empowers communities to participate 
 
 ---
 
-### 📝 **Phase 3: Exercise System (Weeks 5-6)** ⏳ UP NEXT
+### 📝 **Phase 3: Exercise System (Weeks 5-6)** ✅ COMPLETE
 
-- Exercise lifecycle management
-- Participant assignment
-- Progress tracking
+**What we built:**
+- ✅ Exercise lifecycle management with scheduling (start/end dates)
+- ✅ Participant assignment system with limits (max_participants)
+- ✅ Join/leave functionality with exercise full validation
+- ✅ Progress tracking with real-time participant counts
+- ✅ RLS-safe participant counting function
+- ✅ Enhanced admin interface with new exercise fields
+- ✅ Target AI models selection for future integration
+- ✅ UI improvements (loading states, colored action buttons)
+- ✅ Multi-user testing and system recovery completed
 
 ---
 
@@ -77,17 +84,17 @@ The SOMOS Civic Lab AI Red-Teaming Platform empowers communities to participate 
 
 ---
 
-## 📈 Progress: 40% Complete
+## 📈 Progress: 60% Complete
 
 | Phase | Status |
 |-------|--------|
 | Foundation & Auth | ✅ 100% |
 | RBAC & Admin | ✅ 100% |
-| Exercise System | ⏳ 0% |
+| Exercise System | ✅ 100% |
 | AI Integration | ⏳ 0% |
 | Flagging | ⏳ 0% |
 | Launch | ⏳ 0% |
 
 ---
 
-*Last Updated: December 3, 2025*
+*Last Updated: December 11, 2025*

@@ -2,9 +2,20 @@
 
 ## 📊 Project Status Dashboard
 
-**Current Milestone:** 🎉 **Week 3-4 COMPLETE** - RBAC & Admin System  
-**Next Milestone:** Week 5-6 Exercise System  
+**Current Milestone:** 🎉 **Week 5-6 COMPLETE** - Exercise System  
+**Next Milestone:** Week 7-8 AI Integration  
 **Timeline:** 10-Week Development Cycle
+
+### 🏆 Week 5-6 Achievement: Exercise System Complete (100%)
+- ✅ Exercise lifecycle management with scheduling (start/end dates)
+- ✅ Participant assignment system with limits (max_participants)
+- ✅ Join/leave functionality with full exercise validation
+- ✅ Progress tracking with real-time participant counts
+- ✅ RLS-safe participant counting function
+- ✅ Enhanced admin interface with new exercise fields
+- ✅ Target AI models selection for future integration
+- ✅ UI improvements (loading states, colored buttons)
+- ✅ Multi-user testing and validation completed
 
 ### 🏆 Week 3-4 Achievement: RBAC & Admin Complete (100%)
 - ✅ Role-based access control (Admin/Participant)
@@ -38,7 +49,7 @@ Track progress and deliverables for each development week:
 | [Week 1: Foundation](./milestones/week1-foundation-complete.md) | ✅ Complete | Next.js, CI/CD, Project Setup |
 | [Week 2: Database & Auth](./milestones/week2-database-auth-setup.md) | ✅ Complete | Supabase, Authentication |
 | [Week 3-4: RBAC & Admin](./milestones/week3-4-rbac-admin.md) | ✅ Complete | Roles, Admin Panel, Testing |
-| Week 5-6: Exercise System | ⏳ Next | Exercise Management |
+| [Week 5-6: Exercise System](./milestones/week5-6-exercise-system.md) | ✅ Complete | Exercise Management |
 | Week 7-8: AI Integration | ⏳ Planned | Multi-Provider AI APIs |
 | Week 9: Flagging System | ⏳ Planned | User Reporting |
 | Week 10: Analytics & Deploy | ⏳ Planned | Production Launch |
@@ -50,6 +61,7 @@ Track progress and deliverables for each development week:
 | [Architecture Overview](./technical/architecture-overview.md) | System design and technology decisions |
 | [Database Implementation](./technical/database-implementation.md) | Schema and relationships |
 | [Authentication](./technical/authentication-implementation.md) | Auth flows and security |
+| [Exercise System](./technical/exercise-system.md) | Exercise lifecycle and participant management |
 | [Admin System](./technical/admin-system.md) | RBAC and admin features |
 | [Testing & Monitoring](./technical/testing-monitoring.md) | Playwright, Sentry, Snyk |
 
@@ -58,6 +70,7 @@ Track progress and deliverables for each development week:
 | Document | Description |
 |----------|-------------|
 | [Project Roadmap](./non-technical/project-roadmap.md) | 10-week development timeline |
+| [Testing Strategy](./non-technical/testing-strategy.md) | Automated testing approach and methodology |
 
 ---
 
@@ -90,4 +103,4 @@ Track progress and deliverables for each development week:
 
 ---
 
-*Last Updated: December 3, 2025 - Week 3-4 RBAC & Admin Complete*
+*Last Updated: December 11, 2025 - Week 5-6 Exercise System Complete*
