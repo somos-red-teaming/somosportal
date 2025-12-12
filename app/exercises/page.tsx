@@ -131,7 +131,7 @@ export default function ExercisesPage() {
     return colors[level] || 'bg-gray-500'
   }
 
-  const isExerciseFull = (ex: Exercise) => ex.max_participants && ex.participant_count >= ex.max_participants
+  const isExerciseFull = (ex: Exercise) => Boolean(ex.max_participants && ex.participant_count >= ex.max_participants)
 
   return (
     <div className="min-h-screen bg-background">
