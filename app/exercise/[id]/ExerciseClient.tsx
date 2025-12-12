@@ -108,7 +108,7 @@ export default function ExerciseClient() {
     }
   }
 
-  const isExerciseFull = exercise?.max_participants && participantCount >= exercise.max_participants
+  const isExerciseFull = Boolean(exercise?.max_participants && participantCount >= exercise.max_participants)
 
   const handleJoin = async () => {
     if (!user) return
