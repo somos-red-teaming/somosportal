@@ -220,7 +220,7 @@ async function generateDallEImage(prompt: string, blindName: string) {
       model: blindName,
       provider: 'dall-e-3',
       prompt: prompt,
-      metadata: { error: error.message }
+      metadata: { error: error instanceof Error ? error.message : String(error) }
     })
   }
 }
