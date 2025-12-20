@@ -275,7 +275,7 @@ export default function ExerciseClient() {
                     'lg:grid-cols-2'
                   }`}>
                     {models.map((model) => (
-                      <div key={model.model_id} className="h-[calc(50vh-100px)] lg:h-[calc(100vh-250px)] max-h-[450px] min-h-[300px] w-full">
+                      <div key={model.id} className="h-[calc(50vh-100px)] lg:h-[calc(100vh-250px)] max-h-[450px] min-h-[300px] w-full">
                         <ChatBox
                           modelName={model.blind_name}
                           modelId={model.ai_models.id}
