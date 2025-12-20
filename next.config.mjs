@@ -6,8 +6,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 const nextConfig = {
-  // Only use static export for production builds
-  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
+  // Remove static export to allow API routes
   trailingSlash: true,
   images: {
     unoptimized: true
