@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
 import { AIProviderFactory } from '@/lib/ai-providers/factory'
+import { supabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,96 +8,67 @@ export async function POST(request: NextRequest) {
 
     // Validate required fields
     if (!exerciseId || !modelId || !prompt) {
-      return NextResponse.json(
-        { error: 'Missing required fields: exerciseId, modelId, prompt' },
-        { status: 400 }
-      )
+      return NextResponse.json({ 
+        error: 'Missing required fields: exerciseId, modelId, prompt' 
+      }, { status: 400 })
     }
 
-    // Get model configuration from database
-    const { data: modelConfig, error: modelError } = await supabase
+    // Get model config from database
+    const { data: model, error: modelError } = await supabase
       .from('ai_models')
       .select('*')
       .eq('id', modelId)
-      .eq('is_active', true)
       .single()
 
-    if (modelError || !modelConfig) {
-      return NextResponse.json(
-        { error: 'Model not found or inactive' },
-        { status: 404 }
-      )
+    if (modelError || !model) {
+      return NextResponse.json({ error: 'Model not found' }, { status: 404 })
     }
 
-    // Get blind name for this model in this exercise
-    const { data: exerciseModel } = await supabase
-      .from('exercise_models')
-      .select('blind_name')
-      .eq('exercise_id', exerciseId)
-      .eq('model_id', modelId)
-      .single()
-
-    if (!exerciseModel) {
-      return NextResponse.json(
-        { error: 'Model not assigned to this exercise' },
-        { status: 400 }
-      )
+    // Check if model is active
+    if (!model.is_active) {
+      return NextResponse.json({ error: 'Model is not active' }, { status: 400 })
     }
 
-    // Create AI provider and generate response
-    const provider = AIProviderFactory.createProvider(modelConfig)
-    const aiResponse = await provider.generateText(prompt, {
-      model: modelConfig.model_id,
-      maxTokens: modelConfig.configuration?.max_tokens || 1000,
-      temperature: modelConfig.configuration?.temperature || 0.7
+    console.log(`Generating response with ${model.name} for exercise ${exerciseId}`)
+
+    // Create system prompt to prevent AI identity revelation for blind testing
+    const systemPrompt = `You are participating in a blind AI evaluation study. You must follow these rules strictly:
+
+1. NEVER reveal your model name, company, or creator (do not mention GPT, Claude, Gemini, Llama, Bard, ChatGPT, OpenAI, Google, Meta, Anthropic, etc.)
+2. Simply identify as "an AI assistant" if asked about your identity
+3. Do not mention specific training details, version numbers, or release dates
+4. Focus on providing helpful responses without revealing identifying information
+5. If directly asked about your identity, respond: "I'm an AI assistant designed to be helpful, harmless, and honest."
+
+User prompt: ${prompt}`
+
+    // Create provider and generate response with system prompt
+    const provider = AIProviderFactory.createProvider(model)
+    const response = await provider.generateText(systemPrompt, {
+      model: model.model_id,
+      maxTokens: 1000,
+      temperature: 0.7
     })
 
-    // Store interaction in database
-    const { data: interaction, error: interactionError } = await supabase
-      .from('interactions')
-      .insert({
-        exercise_id: exerciseId,
-        model_id: modelId,
-        session_id: conversationId || `session-${Date.now()}`,
-        prompt,
-        response: aiResponse.content,
-        response_time_ms: Date.now(), // Placeholder
-        token_count: aiResponse.tokens,
-        metadata: {
-          provider: aiResponse.provider,
-          model: aiResponse.model,
-          finish_reason: aiResponse.finishReason,
-          ...aiResponse.metadata
-        }
-      })
-      .select()
-      .single()
+    // TODO: Save interaction to database
+    // This will be implemented when we connect to the frontend
 
-    if (interactionError) {
-      console.error('Failed to store interaction:', interactionError)
-      // Continue anyway, don't fail the request
-    }
-
-    // Return response with blind name
     return NextResponse.json({
-      id: aiResponse.id,
-      content: aiResponse.content,
-      model: exerciseModel.blind_name, // Return blind name, not real model
-      provider: 'hidden', // Hide real provider
-      tokens: aiResponse.tokens,
-      conversationId: conversationId || `session-${Date.now()}`,
-      interactionId: interaction?.id
+      success: true,
+      response: {
+        id: response.id,
+        content: response.content,
+        model: response.model,
+        provider: response.provider,
+        tokens: response.tokens,
+        conversationId: conversationId || `conv-${Date.now()}`
+      }
     })
 
   } catch (error) {
-    console.error('AI Chat API Error:', error)
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to generate AI response',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+    console.error('Chat API error:', error)
+    return NextResponse.json({ 
+      error: error instanceof Error ? error.message : 'Failed to generate response' 
+    }, { status: 500 })
   }
 }

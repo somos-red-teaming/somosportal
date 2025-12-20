@@ -3,39 +3,55 @@ import { OpenAIProvider } from './openai'
 import { AnthropicProvider } from './anthropic'
 import { GoogleProvider } from './google'
 import { CustomProvider } from './custom'
+import { GroqProvider } from './groq'
 
+/**
+ * Configuration interface for AI models
+ */
 export interface AIModelConfig {
   id: string
   name: string
-  provider: 'openai' | 'anthropic' | 'google' | 'custom'
+  provider: 'openai' | 'anthropic' | 'google' | 'custom' | 'groq'
   model_id: string
   configuration: Record<string, any>
 }
 
+/**
+ * Factory class for creating AI provider instances
+ */
 export class AIProviderFactory {
+  /**
+   * Create an AI provider instance based on configuration
+   * @param config - AI model configuration
+   * @returns AI provider instance
+   */
   static createProvider(config: AIModelConfig): AIProvider {
     switch (config.provider) {
       case 'openai':
-        return new OpenAIProvider(config.configuration.apiKey)
+        return new OpenAIProvider()
       
       case 'anthropic':
-        return new AnthropicProvider(config.configuration.apiKey)
+        return new AnthropicProvider()
       
       case 'google':
-        return new GoogleProvider(config.configuration.apiKey)
+        return new GoogleProvider()
       
       case 'custom':
-        return new CustomProvider({
-          endpoint: config.configuration.endpoint,
-          apiKey: config.configuration.apiKey,
-          headers: config.configuration.headers
-        })
+        return new CustomProvider()
+      
+      case 'groq':
+        return new GroqProvider()
       
       default:
         throw new Error(`Unsupported provider: ${config.provider}`)
     }
   }
 
+  /**
+   * Test connection for an AI provider
+   * @param config - AI model configuration
+   * @returns Promise resolving to connection test result
+   */
   static async testProvider(config: AIModelConfig): Promise<boolean> {
     try {
       const provider = this.createProvider(config)
@@ -46,15 +62,26 @@ export class AIProviderFactory {
   }
 }
 
-// Provider manager for handling multiple models
+/**
+ * Manager class for handling multiple AI provider instances
+ */
 export class AIProviderManager {
   private providers = new Map<string, AIProvider>()
 
+  /**
+   * Load and register an AI model provider
+   * @param config - AI model configuration
+   */
   async loadModel(config: AIModelConfig): Promise<void> {
     const provider = AIProviderFactory.createProvider(config)
     this.providers.set(config.id, provider)
   }
 
+  /**
+   * Get a loaded AI provider by model ID
+   * @param modelId - Model identifier
+   * @returns AI provider instance or undefined
+   */
   getProvider(modelId: string): AIProvider | undefined {
     return this.providers.get(modelId)
   }
@@ -86,5 +113,7 @@ export class AIProviderManager {
   }
 }
 
-// Global instance
+/**
+ * Global AI provider manager instance
+ */
 export const aiProviderManager = new AIProviderManager()

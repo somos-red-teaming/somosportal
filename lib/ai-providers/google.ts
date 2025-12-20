@@ -1,5 +1,9 @@
 import { AIProvider, AIResponse, AIImageResponse, GenerateTextOptions, GenerateImageOptions, AIProviderError } from './base'
 
+/**
+ * Google AI Provider
+ * Handles Gemini model text generation
+ */
 export class GoogleProvider implements AIProvider {
   name = 'Google'
   type = 'google' as const
@@ -7,8 +11,11 @@ export class GoogleProvider implements AIProvider {
   private apiKey: string
   private baseURL = 'https://generativelanguage.googleapis.com/v1beta'
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey
+  constructor() {
+    this.apiKey = process.env.GOOGLE_API_KEY!
+    if (!this.apiKey) {
+      throw new AIProviderError('GOOGLE_API_KEY environment variable not set', 'google')
+    }
   }
 
   async generateText(prompt: string, options?: GenerateTextOptions): Promise<AIResponse> {
@@ -120,7 +127,13 @@ export class GoogleProvider implements AIProvider {
 
   async testConnection(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseURL}/models/gemini-pro:generateContent?key=${this.apiKey}`, {
+      console.log('Testing Google API with key:', this.apiKey ? 'Key present' : 'No key')
+      
+      // Use gemini-2.5-flash which should be available
+      const testModel = 'gemini-2.5-flash'
+      console.log('Testing with model:', testModel)
+      
+      const response = await fetch(`${this.baseURL}/models/${testModel}:generateContent?key=${this.apiKey}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -134,8 +147,17 @@ export class GoogleProvider implements AIProvider {
           }
         }),
       })
+      
+      console.log('Google API response status:', response.status)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error('Google API error response:', errorText)
+      }
+      
       return response.ok
-    } catch {
+    } catch (error) {
+      console.error('Google API test connection error:', error)
       return false
     }
   }

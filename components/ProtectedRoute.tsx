@@ -10,6 +10,12 @@ interface ProtectedRouteProps {
   redirectTo?: string
 }
 
+/**
+ * Protected route component for authentication-based access control
+ * @param children - Components to render when access is granted
+ * @param requireAuth - Whether authentication is required (default: true)
+ * @param redirectTo - Where to redirect unauthorized users (default: '/login')
+ */
 export function ProtectedRoute({ 
   children, 
   requireAuth = true, 

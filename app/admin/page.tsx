@@ -7,7 +7,7 @@ import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import { Users, FileText, Flag, Activity } from 'lucide-react'
+import { Users, FileText, Flag, Activity, Bot, Code, TestTube } from 'lucide-react'
 
 interface Stats {
   users: number
@@ -83,7 +83,7 @@ export default function AdminDashboard() {
             </Card>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <Card>
               <CardHeader>
                 <CardTitle>User Management</CardTitle>
@@ -100,6 +100,45 @@ export default function AdminDashboard() {
               <CardContent>
                 <p className="text-muted-foreground mb-4">Create, edit, and manage red-teaming exercises.</p>
                 <Button asChild><Link href="/admin/exercises">Manage Exercises</Link></Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bot className="h-5 w-5" />
+                  AI Models
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">Configure AI providers and manage model settings.</p>
+                <Button asChild><Link href="/admin/models">Manage Models</Link></Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TestTube className="h-5 w-5" />
+                  API Tester
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">Test AI models with interactive interface.</p>
+                <Button asChild><Link href="/api-tester">Test APIs</Link></Button>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Code className="h-5 w-5" />
+                  API Documentation
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">Complete API documentation with Swagger UI.</p>
+                <Button variant="outline" asChild><Link href="/api-docs">View API Docs</Link></Button>
               </CardContent>
             </Card>
           </div>

@@ -17,6 +17,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+/**
+ * Authentication provider component that manages user session state
+ * Handles sign up, sign in, OAuth, and password reset functionality
+ * @param children - React children components
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
@@ -129,6 +134,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+/**
+ * Hook to access authentication context
+ * Must be used within AuthProvider
+ * @returns Authentication context with user, session, and auth methods
+ */
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {

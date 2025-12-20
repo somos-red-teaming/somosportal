@@ -5,6 +5,11 @@ import { useRole } from '@/hooks/useRole'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
+/**
+ * Admin route protection component
+ * Redirects non-admin users to appropriate pages
+ * @param children - Components to render for admin users
+ */
 export function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth()
   const { isAdmin, loading: roleLoading } = useRole()

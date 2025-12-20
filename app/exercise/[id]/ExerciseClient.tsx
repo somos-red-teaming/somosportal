@@ -11,8 +11,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Slider } from '@/components/ui/slider'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Header } from '@/components/header'
-import { AlertCircle, Send, Flag, Info, ArrowLeft, Users, Calendar, CheckCircle } from 'lucide-react'
+import { ChatBox } from '@/components/ChatBox'
+import { AlertCircle, Info, ArrowLeft, Users, Calendar, CheckCircle, Flag } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { getExerciseModels } from '@/lib/blind-assignment'
 import { useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
 
@@ -30,7 +32,16 @@ interface Exercise {
 
 interface AIModel {
   id: string
-  display_name: string
+  blind_name: string
+  ai_models: {
+    id: string
+    name: string
+    display_name: string
+    provider: string
+    model_id: string
+    capabilities: string[]
+    is_active: boolean
+  }
 }
 
 interface Participation {
@@ -61,27 +72,28 @@ export default function ExerciseClient() {
   const [error, setError] = useState<string | null>(null)
 
   const [selectedModels, setSelectedModels] = useState<string[]>([])
-  const [prompt, setPrompt] = useState('')
-  const [responses, setResponses] = useState<Array<{ model: string; text: string }>>([])
   const [flagCategory, setFlagCategory] = useState('')
   const [severity, setSeverity] = useState([5])
   const [flagComment, setFlagComment] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     fetchData()
   }, [params.id, user])
 
+  /**
+   * Fetch exercise data and assigned models with blind names
+   * Gets models specifically assigned to this exercise, not all available models
+   */
   const fetchData = async () => {
     try {
-      const [exerciseRes, modelsRes] = await Promise.all([
-        supabase.from('exercises').select('*').eq('id', params.id).single(),
-        supabase.from('ai_models').select('id, display_name').eq('is_active', true),
-      ])
-
+      // Fetch exercise details
+      const exerciseRes = await supabase.from('exercises').select('*').eq('id', params.id).single()
       if (exerciseRes.error) throw exerciseRes.error
       setExercise(exerciseRes.data)
-      setModels(modelsRes.data || [])
+
+      // Fetch models assigned to this exercise with blind names
+      const exerciseModels = await getExerciseModels(params.id as string)
+      setModels(exerciseModels)
 
       // Get participant count using RLS-safe function
       const { data: countData } = await supabase
@@ -130,26 +142,13 @@ export default function ExerciseClient() {
     fetchData()
   }
 
-  const handleModelToggle = (modelId: string) => {
-    if (selectedModels.includes(modelId)) {
-      setSelectedModels(selectedModels.filter(id => id !== modelId))
-    } else if (selectedModels.length < 2) {
-      setSelectedModels([...selectedModels, modelId])
-    }
-  }
-
-  const handleSendPrompt = () => {
-    if (!prompt.trim() || selectedModels.length === 0) return
-    setIsLoading(true)
-
-    setTimeout(() => {
-      const newResponses = selectedModels.map(modelId => ({
-        model: models.find(m => m.id === modelId)?.display_name || 'Unknown',
-        text: `[Demo] Placeholder response for "${prompt}". Real AI integration in Week 7-8.`
-      }))
-      setResponses(newResponses)
-      setIsLoading(false)
-    }, 1000)
+  /**
+   * Handle message sent from ChatBox component
+   * @param message - Message content sent by user
+   */
+  const handleMessageSent = (message: string) => {
+    // Could be used for analytics or logging
+    console.log('Message sent:', message)
   }
 
   const handleSubmitFlag = () => {
@@ -241,48 +240,47 @@ export default function ExerciseClient() {
               </Card>
             </div>
 
-            <div className="lg:col-span-6">
-              <Card className="mb-6">
-                <CardHeader>
-                  <CardTitle>Model Selection</CardTitle>
-                  <CardDescription>Select up to 2 models for blind comparison</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {models.length === 0 ? (
-                    <p className="text-muted-foreground">No AI models available.</p>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-4">
-                      {models.map((model) => (
-                        <div key={model.id} className={`flex items-center space-x-2 rounded-lg border p-4 cursor-pointer ${selectedModels.includes(model.id) ? 'border-primary bg-primary/5' : 'hover:bg-accent'}`} onClick={() => handleModelToggle(model.id)}>
-                          <Checkbox checked={selectedModels.includes(model.id)} />
-                          <Label className="cursor-pointer">{model.display_name}</Label>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card className="mb-6">
-                <CardHeader><CardTitle>Test Prompt</CardTitle></CardHeader>
-                <CardContent>
-                  <Textarea placeholder="Enter your prompt..." value={prompt} onChange={(e) => setPrompt(e.target.value)} rows={3} className="mb-4" />
-                  <Button onClick={handleSendPrompt} disabled={selectedModels.length === 0 || !prompt.trim() || isLoading} className="w-full">
-                    {isLoading ? 'Loading...' : <><Send className="mr-2 h-4 w-4" />Send</>}
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {responses.length > 0 && (
-                <div className="space-y-4">
-                  {responses.map((r, i) => (
-                    <Card key={i}>
-                      <CardHeader><CardTitle className="text-base">{r.model}</CardTitle></CardHeader>
-                      <CardContent><p className="text-sm">{r.text}</p></CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
+            {/* Chat Interface - Fixed mobile layout with overflow protection */}
+            <div className="lg:col-span-6 -mx-2 sm:-mx-0">
+              <div className="w-full overflow-hidden">
+                {models.length === 0 ? (
+                  <Card className="text-center py-12">
+                    <CardContent>
+                      <Info className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <h2 className="text-xl font-semibold mb-2">No AI Models Assigned</h2>
+                      <p className="text-muted-foreground">This exercise doesn't have any AI models configured.</p>
+                    </CardContent>
+                  </Card>
+                ) : models.length === 1 ? (
+                  /* Single model - contained height */
+                  <div className="h-[calc(100vh-200px)] max-h-[600px] min-h-[400px] w-full">
+                    <ChatBox
+                      modelName={models[0].blind_name}
+                      modelId={models[0].ai_models.id}
+                      exerciseId={params.id as string}
+                      onSendMessage={handleMessageSent}
+                    />
+                  </div>
+                ) : (
+                  /* Multiple models - responsive grid for all assigned models */
+                  <div className={`space-y-4 lg:space-y-0 lg:grid lg:gap-4 w-full ${
+                    models.length === 2 ? 'lg:grid-cols-2' : 
+                    models.length === 3 ? 'lg:grid-cols-3' : 
+                    'lg:grid-cols-2'
+                  }`}>
+                    {models.map((model) => (
+                      <div key={model.model_id} className="h-[calc(50vh-100px)] lg:h-[calc(100vh-250px)] max-h-[450px] min-h-[300px] w-full">
+                        <ChatBox
+                          modelName={model.blind_name}
+                          modelId={model.ai_models.id}
+                          exerciseId={params.id as string}
+                          onSendMessage={handleMessageSent}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="lg:col-span-3">

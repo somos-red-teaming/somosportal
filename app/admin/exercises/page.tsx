@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
 import { supabase } from '@/lib/supabase'
+import { previewBlindAssignments, assignModelsToExercise } from '@/lib/blind-assignment'
 import { ArrowLeft, Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, Users, Calendar } from 'lucide-react'
 import Link from 'next/link'
 
@@ -33,7 +34,9 @@ interface Exercise {
 
 interface AIModel {
   id: string
+  name: string
   display_name: string
+  provider: string
 }
 
 const PAGE_SIZE = 10
@@ -68,9 +71,28 @@ export default function AdminExercisesPage() {
     fetchModels()
   }, [page, search])
 
+  /**
+   * Fetch available AI models from database
+   * Gets active models with full details, filtering out test entries
+   */
   const fetchModels = async () => {
-    const { data } = await supabase.from('ai_models').select('id, display_name').eq('is_active', true)
-    setModels(data || [])
+    const { data } = await supabase
+      .from('ai_models')
+      .select('id, name, display_name, provider')
+      .eq('is_active', true)
+      .not('name', 'ilike', '%test%') // Filter out test models
+      .not('display_name', 'ilike', '%test%') // Filter out test display names
+      .order('name')
+    
+    // Clean up the data - use proper display names
+    const cleanModels = (data || []).map(model => ({
+      ...model,
+      display_name: model.display_name && !model.display_name.includes('Model ') 
+        ? model.display_name 
+        : model.name
+    }))
+    
+    setModels(cleanModels)
   }
 
   const fetchExercises = async () => {
@@ -99,6 +121,10 @@ export default function AdminExercisesPage() {
     setLoading(false)
   }
 
+  /**
+   * Submit exercise form - create new or update existing
+   * Saves exercise data and assigns models with blind names to junction table
+   */
   const handleSubmit = async () => {
     if (!form.title || !form.description || !form.category || !form.guidelines) return
     setSaving(true)
@@ -117,14 +143,27 @@ export default function AdminExercisesPage() {
       start_date: form.start_date || null,
       end_date: form.end_date || null,
       max_participants: form.max_participants ? parseInt(form.max_participants) : null,
-      target_models: form.target_models.length > 0 ? form.target_models : null,
     }
 
+    let exerciseId = editingId
+
     if (editingId) {
+      // Update existing exercise
       await supabase.from('exercises').update(exerciseData).eq('id', editingId)
     } else {
+      // Create new exercise
       const { data: userData } = await supabase.from('users').select('id').eq('auth_user_id', user.id).single()
-      await supabase.from('exercises').insert({ ...exerciseData, created_by: userData?.id })
+      const { data: newExercise } = await supabase
+        .from('exercises')
+        .insert({ ...exerciseData, created_by: userData?.id })
+        .select('id')
+        .single()
+      exerciseId = newExercise?.id
+    }
+
+    // Assign models with blind names to junction table
+    if (exerciseId && form.target_models.length > 0) {
+      await assignModelsToExercise(exerciseId, form.target_models)
     }
 
     setDialogOpen(false)
@@ -157,6 +196,10 @@ export default function AdminExercisesPage() {
     fetchExercises()
   }
 
+  /**
+   * Toggle model selection and update blind name preview
+   * @param modelId - ID of the model to toggle
+   */
   const toggleModel = (modelId: string) => {
     setForm(f => ({
       ...f,
@@ -165,6 +208,9 @@ export default function AdminExercisesPage() {
         : [...f.target_models, modelId]
     }))
   }
+
+  // Generate blind name preview for selected models
+  const blindPreview = previewBlindAssignments(form.target_models)
 
   const statusColor = (s: string): 'default' | 'secondary' | 'destructive' => 
     s === 'active' ? 'default' : s === 'paused' ? 'destructive' : 'secondary'
@@ -253,11 +299,34 @@ export default function AdminExercisesPage() {
                       <Label>Target AI Models</Label>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {models.map((m) => (
-                          <Badge key={m.id} variant={form.target_models.includes(m.id) ? 'default' : 'outline'} className="cursor-pointer" onClick={() => toggleModel(m.id)}>
-                            {m.display_name}
+                          <Badge 
+                            key={m.id} 
+                            variant={form.target_models.includes(m.id) ? 'default' : 'outline'} 
+                            className="cursor-pointer" 
+                            onClick={() => toggleModel(m.id)}
+                          >
+                            {m.display_name || m.name}
                           </Badge>
                         ))}
                       </div>
+                      
+                      {/* Blind name preview for selected models */}
+                      {form.target_models.length > 0 && (
+                        <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                          <Label className="text-sm font-medium text-blue-900">Blind Name Assignment Preview:</Label>
+                          <div className="mt-2 space-y-1">
+                            {blindPreview.map((assignment, index) => {
+                              const model = models.find(m => m.id === assignment.modelId)
+                              return (
+                                <div key={assignment.modelId} className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-600">{model?.display_name || model?.name}</span>
+                                  <Badge variant="secondary">{assignment.blindName}</Badge>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                   <div>

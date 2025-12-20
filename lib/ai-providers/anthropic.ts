@@ -1,5 +1,9 @@
 import { AIProvider, AIResponse, GenerateTextOptions, AIProviderError } from './base'
 
+/**
+ * Anthropic AI Provider
+ * Handles Claude model text generation
+ */
 export class AnthropicProvider implements AIProvider {
   name = 'Anthropic'
   type = 'anthropic' as const
@@ -7,8 +11,11 @@ export class AnthropicProvider implements AIProvider {
   private apiKey: string
   private baseURL = 'https://api.anthropic.com/v1'
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey
+  constructor() {
+    this.apiKey = process.env.ANTHROPIC_API_KEY!
+    if (!this.apiKey) {
+      throw new AIProviderError('ANTHROPIC_API_KEY environment variable not set', 'anthropic')
+    }
   }
 
   async generateText(prompt: string, options?: GenerateTextOptions): Promise<AIResponse> {
@@ -60,7 +67,9 @@ export class AnthropicProvider implements AIProvider {
 
   async testConnection(): Promise<boolean> {
     try {
-      // Test with a minimal request
+      console.log('Testing Anthropic API with key:', this.apiKey ? 'Key present' : 'No key')
+      
+      // Test with current model
       const response = await fetch(`${this.baseURL}/messages`, {
         method: 'POST',
         headers: {
@@ -69,14 +78,28 @@ export class AnthropicProvider implements AIProvider {
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-3-sonnet-20240229',
+          model: 'claude-3-5-haiku-20241022',
           max_tokens: 1,
           messages: [{ role: 'user', content: 'Hi' }],
         }),
       })
-      return response.ok
-    } catch {
-      return false
+      
+      console.log('Anthropic API response status:', response.status)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        console.error('Anthropic API error response:', JSON.stringify(errorData))
+        
+        // Extract the actual error message
+        const errorMessage = errorData?.error?.message || `HTTP ${response.status}: ${response.statusText}`
+        throw new Error(errorMessage)
+      }
+      
+      console.log('Anthropic test successful')
+      return true
+    } catch (error) {
+      console.error('Anthropic API test connection error:', error)
+      throw error // Re-throw so the API can catch and return the actual error
     }
   }
 }

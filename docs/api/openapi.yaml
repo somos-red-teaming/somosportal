@@ -1,0 +1,261 @@
+openapi: 3.0.3
+info:
+  title: SOMOS AI Red-Teaming Platform API
+  description: API endpoints for AI model integration and red-teaming exercises
+  version: 1.0.0
+  contact:
+    name: SOMOS Development Team
+    
+servers:
+  - url: http://localhost:3000/api
+    description: Development server
+  - url: https://somos.website/api
+    description: Production server
+
+paths:
+  /ai/chat:
+    post:
+      summary: Generate AI response
+      description: Generate text response from specified AI model for red-teaming exercise
+      tags:
+        - AI Integration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - exerciseId
+                - modelId
+                - prompt
+              properties:
+                exerciseId:
+                  type: string
+                  description: Unique identifier for the exercise
+                  example: "test-exercise-123"
+                modelId:
+                  type: string
+                  format: uuid
+                  description: UUID of the AI model to use
+                  example: "4c47fde5-4acd-4db2-b93d-8b3180fde744"
+                prompt:
+                  type: string
+                  description: User prompt to send to AI model
+                  example: "Hello, how are you?"
+                conversationId:
+                  type: string
+                  description: Optional conversation ID for threading
+                  example: "conv-1766164317213"
+      responses:
+        '200':
+          description: Successful AI response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  response:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: Unique response ID
+                        example: "gemini-1766164317213"
+                      content:
+                        type: string
+                        description: AI-generated response text
+                        example: "Hello! As an AI, I don't have feelings..."
+                      model:
+                        type: string
+                        description: Model identifier used
+                        example: "gemini-2.5-flash"
+                      provider:
+                        type: string
+                        enum: [google, groq, openai, anthropic, custom]
+                        description: AI provider used
+                        example: "google"
+                      tokens:
+                        type: integer
+                        description: Number of tokens used
+                        example: 232
+                      conversationId:
+                        type: string
+                        description: Conversation thread ID
+                        example: "conv-1766164317213"
+        '400':
+          description: Bad request - missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /ai/test:
+    post:
+      summary: Test AI model connection
+      description: Test connection to specified AI model and verify API credentials
+      tags:
+        - AI Integration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - modelId
+              properties:
+                modelId:
+                  type: string
+                  format: uuid
+                  description: UUID of the AI model to test
+                  example: "4c47fde5-4acd-4db2-b93d-8b3180fde744"
+      responses:
+        '200':
+          description: Test result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the connection test succeeded
+                    example: true
+                  error:
+                    type: string
+                    description: Error message if test failed
+                    example: "Your credit balance is too low to access the Anthropic API"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Model not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /test-blind:
+    post:
+      summary: Test blind assignment logic
+      description: Test endpoint for blind model assignment functionality
+      tags:
+        - Blind Assignment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - action
+              properties:
+                action:
+                  type: string
+                  enum: [preview, assign, get]
+                  description: Action to perform
+                  example: "preview"
+                exerciseId:
+                  type: string
+                  description: Exercise ID (required for assign/get actions)
+                  example: "test-exercise-123"
+                modelIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: Array of model UUIDs (required for preview/assign)
+                  example: ["4c47fde5-4acd-4db2-b93d-8b3180fde744"]
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  preview:
+                    type: array
+                    description: Preview of blind assignments (for preview action)
+                    items:
+                      type: object
+                      properties:
+                        modelId:
+                          type: string
+                          format: uuid
+                        blindName:
+                          type: string
+                          example: "Alpha"
+                  assignments:
+                    type: array
+                    description: Created assignments (for assign action)
+                    items:
+                      type: object
+                      properties:
+                        exercise_id:
+                          type: string
+                        model_id:
+                          type: string
+                          format: uuid
+                        blind_name:
+                          type: string
+                  models:
+                    type: array
+                    description: Exercise models (for get action)
+                    items:
+                      type: object
+                      properties:
+                        model_id:
+                          type: string
+                          format: uuid
+                        blind_name:
+                          type: string
+                        ai_models:
+                          type: object
+
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Missing required fields: exerciseId, modelId, prompt"
+        success:
+          type: boolean
+          example: false
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+tags:
+  - name: AI Integration
+    description: AI model integration and chat endpoints
+  - name: Blind Assignment
+    description: Blind model assignment for exercises

@@ -79,10 +79,13 @@ export default function DashboardPage() {
                   Admin Quick Actions
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex gap-4">
-                <Button asChild><Link href="/admin">Admin Dashboard</Link></Button>
-                <Button variant="outline" asChild><Link href="/admin/users">Manage Users</Link></Button>
-                <Button variant="outline" asChild><Link href="/admin/exercises">Manage Exercises</Link></Button>
+              <CardContent className="grid grid-cols-2 sm:grid-cols-3 lg:flex lg:flex-wrap gap-3">
+                <Button asChild className="w-full lg:w-auto"><Link href="/admin">Admin Dashboard</Link></Button>
+                <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/admin/users">Manage Users</Link></Button>
+                <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/admin/exercises">Manage Exercises</Link></Button>
+                <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/admin/models">Manage Models</Link></Button>
+                <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/api-tester">API Tester</Link></Button>
+                <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/api-docs">API Docs</Link></Button>
               </CardContent>
             </Card>
           )}

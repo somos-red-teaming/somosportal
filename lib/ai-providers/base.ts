@@ -1,4 +1,7 @@
-// Base interface for all AI providers
+/**
+ * Base interface for all AI providers
+ * Defines standard methods for text generation, image generation, and connection testing
+ */
 export interface AIProvider {
   name: string
   type: 'openai' | 'anthropic' | 'google' | 'custom'
@@ -13,18 +16,27 @@ export interface AIProvider {
   testConnection(): Promise<boolean>
 }
 
+/**
+ * Options for text generation requests
+ */
 export interface GenerateTextOptions {
   maxTokens?: number
   temperature?: number
   model?: string
 }
 
+/**
+ * Options for image generation requests
+ */
 export interface GenerateImageOptions {
   size?: string
   quality?: string
   style?: string
 }
 
+/**
+ * Standard response format for AI text generation
+ */
 export interface AIResponse {
   id: string
   content: string
@@ -35,6 +47,9 @@ export interface AIResponse {
   metadata?: Record<string, any>
 }
 
+/**
+ * Standard response format for AI image generation
+ */
 export interface AIImageResponse {
   id: string
   imageUrl: string
@@ -43,6 +58,10 @@ export interface AIImageResponse {
   metadata?: Record<string, any>
 }
 
+/**
+ * Custom error class for AI provider operations
+ * Includes provider-specific error information
+ */
 export class AIProviderError extends Error {
   constructor(
     message: string,

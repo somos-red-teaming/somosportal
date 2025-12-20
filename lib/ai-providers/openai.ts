@@ -1,5 +1,9 @@
 import { AIProvider, AIResponse, AIImageResponse, GenerateTextOptions, GenerateImageOptions, AIProviderError } from './base'
 
+/**
+ * OpenAI AI Provider
+ * Handles GPT-4 text generation and DALL-E 3 image generation
+ */
 export class OpenAIProvider implements AIProvider {
   name = 'OpenAI'
   type = 'openai' as const
@@ -7,10 +11,19 @@ export class OpenAIProvider implements AIProvider {
   private apiKey: string
   private baseURL = 'https://api.openai.com/v1'
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey
+  constructor() {
+    this.apiKey = process.env.OPENAI_API_KEY!
+    if (!this.apiKey) {
+      throw new AIProviderError('OPENAI_API_KEY environment variable not set', 'openai')
+    }
   }
 
+  /**
+   * Generates text response using OpenAI GPT models
+   * @param prompt - User input prompt
+   * @param options - Generation options (model, maxTokens, temperature)
+   * @returns Promise<AIResponse> - Generated text response with metadata
+   */
   async generateText(prompt: string, options?: GenerateTextOptions): Promise<AIResponse> {
     try {
       const response = await fetch(`${this.baseURL}/chat/completions`, {
@@ -57,6 +70,12 @@ export class OpenAIProvider implements AIProvider {
     }
   }
 
+  /**
+   * Generates images using DALL-E 3
+   * @param prompt - Image description prompt
+   * @param options - Image generation options (size, quality)
+   * @returns Promise<AIImageResponse> - Generated image URL with metadata
+   */
   async generateImage(prompt: string, options?: GenerateImageOptions): Promise<AIImageResponse> {
     try {
       const response = await fetch(`${this.baseURL}/images/generations`, {
@@ -102,6 +121,10 @@ export class OpenAIProvider implements AIProvider {
     }
   }
 
+  /**
+   * Tests connection to OpenAI API
+   * @returns Promise<boolean> - True if connection successful, false otherwise
+   */
   async testConnection(): Promise<boolean> {
     try {
       const response = await fetch(`${this.baseURL}/models`, {

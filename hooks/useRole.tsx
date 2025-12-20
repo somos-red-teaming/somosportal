@@ -4,6 +4,10 @@ import { useEffect, useState } from 'react'
 import { useAuth } from './useAuth'
 import { supabase } from '@/lib/supabase'
 
+/**
+ * Hook to fetch and manage user role from database
+ * @returns Object containing role, isAdmin flag, and loading state
+ */
 export function useRole() {
   const { user } = useAuth()
   const [role, setRole] = useState<'admin' | 'participant'>('participant')

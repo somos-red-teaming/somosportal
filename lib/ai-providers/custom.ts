@@ -1,5 +1,9 @@
 import { AIProvider, AIResponse, AIImageResponse, GenerateTextOptions, GenerateImageOptions, AIProviderError } from './base'
 
+/**
+ * Custom AI Provider
+ * Handles integration with custom AI endpoints and APIs
+ */
 export class CustomProvider implements AIProvider {
   name = 'Custom'
   type = 'custom' as const
@@ -8,16 +12,21 @@ export class CustomProvider implements AIProvider {
   private endpoint: string
   private headers: Record<string, string>
 
-  constructor(config: {
-    endpoint: string
-    apiKey?: string
-    headers?: Record<string, string>
-  }) {
-    this.endpoint = config.endpoint
-    this.apiKey = config.apiKey
+  constructor() {
+    const endpoint = process.env.CUSTOM_ENDPOINT
+    if (!endpoint) {
+      throw new AIProviderError('CUSTOM_ENDPOINT environment variable not set', 'custom')
+    }
+    
+    this.endpoint = endpoint
+    this.apiKey = process.env.CUSTOM_API_KEY
+    
+    const customHeaders = process.env.CUSTOM_HEADERS
+    const parsedHeaders = customHeaders ? JSON.parse(customHeaders) : {}
+    
     this.headers = {
       'Content-Type': 'application/json',
-      ...(config.headers || {}),
+      ...parsedHeaders,
       ...(this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {})
     }
   }
