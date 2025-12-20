@@ -93,7 +93,13 @@ export default function ExerciseClient() {
 
       // Fetch models assigned to this exercise with blind names
       const exerciseModels = await getExerciseModels(params.id as string)
-      setModels(exerciseModels)
+      // Map to match AIModel interface
+      const mappedModels = exerciseModels.map((em: any) => ({
+        id: em.model_id,
+        blind_name: em.blind_name,
+        ai_models: em.ai_models
+      }))
+      setModels(mappedModels)
 
       // Get participant count using RLS-safe function
       const { data: countData } = await supabase
