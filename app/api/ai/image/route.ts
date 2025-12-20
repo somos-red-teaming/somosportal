@@ -1,124 +1,226 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import { AIProviderFactory } from '@/lib/ai-providers/factory'
+import { GoogleGenerativeAI } from '@google/generative-ai'
 
+/**
+ * API endpoint for AI image generation
+ * Routes to appropriate provider based on model
+ */
 export async function POST(request: NextRequest) {
   try {
-    const { exerciseId, modelId, prompt, options } = await request.json()
+    const { prompt, modelId, blindName } = await request.json()
 
-    // Validate required fields
-    if (!exerciseId || !modelId || !prompt) {
+    if (!prompt || !modelId) {
       return NextResponse.json(
-        { error: 'Missing required fields: exerciseId, modelId, prompt' },
+        { error: 'Missing required fields: prompt, modelId' },
         { status: 400 }
       )
     }
 
-    // Get model configuration from database
-    const { data: modelConfig, error: modelError } = await supabase
+    // Get model info from database to determine provider
+    const { createClient } = require('@supabase/supabase-js')
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    )
+
+    console.log('Looking for model with ID:', modelId) // Debug log
+
+    const { data: model, error } = await supabase
       .from('ai_models')
-      .select('*')
+      .select('provider, model_id')
       .eq('id', modelId)
-      .eq('is_active', true)
       .single()
 
-    if (modelError || !modelConfig) {
-      return NextResponse.json(
-        { error: 'Model not found or inactive' },
-        { status: 404 }
-      )
+    console.log('Model query result:', { model, error }) // Debug log
+
+    if (!model) {
+      return NextResponse.json({
+        id: `img_${Date.now()}`,
+        imageUrl: 'https://via.placeholder.com/512x512/EF4444/FFFFFF?text=Model+Not+Found',
+        model: blindName,
+        provider: 'error',
+        prompt: prompt,
+        metadata: { error: `Model not found: ${modelId}` }
+      })
     }
 
-    // Check if model supports image generation
-    if (!modelConfig.capabilities?.includes('image_generation')) {
-      return NextResponse.json(
-        { error: 'Model does not support image generation' },
-        { status: 400 }
-      )
-    }
-
-    // Get blind name for this model in this exercise
-    const { data: exerciseModel } = await supabase
-      .from('exercise_models')
-      .select('blind_name')
-      .eq('exercise_id', exerciseId)
-      .eq('model_id', modelId)
-      .single()
-
-    if (!exerciseModel) {
-      return NextResponse.json(
-        { error: 'Model not assigned to this exercise' },
-        { status: 400 }
-      )
-    }
-
-    // Create AI provider and generate image
-    const provider = AIProviderFactory.createProvider(modelConfig)
-    
-    if (!provider.generateImage) {
-      return NextResponse.json(
-        { error: 'Provider does not support image generation' },
-        { status: 400 }
-      )
-    }
-
-    const aiResponse = await provider.generateImage(prompt, {
-      size: options?.size || '1024x1024',
-      quality: options?.quality || 'standard',
-      style: options?.style
-    })
-
-    // Store interaction in database
-    const { data: interaction, error: interactionError } = await supabase
-      .from('interactions')
-      .insert({
-        exercise_id: exerciseId,
-        model_id: modelId,
-        session_id: `img-session-${Date.now()}`,
-        prompt,
-        response: aiResponse.imageUrl,
-        response_time_ms: Date.now(), // Placeholder
-        metadata: {
-          type: 'image',
-          provider: aiResponse.provider,
-          model: aiResponse.model,
-          image_url: aiResponse.imageUrl,
-          ...aiResponse.metadata
+    // Only allow image generation for models that actually support it
+    if (model.provider === 'google') {
+      return await generateGoogleImage(prompt, blindName)
+    } else if (model.provider === 'openai') {
+      return await generateDallEImage(prompt, blindName)
+    } else {
+      // Model doesn't support image generation
+      return NextResponse.json({
+        id: `img_${Date.now()}`,
+        imageUrl: 'https://via.placeholder.com/512x512/6B7280/FFFFFF?text=Image+Generation+Not+Supported',
+        model: blindName,
+        provider: model.provider,
+        prompt: prompt,
+        metadata: { 
+          error: `${blindName} doesn't support image generation`,
+          supportedFeatures: ['text']
         }
       })
-      .select()
-      .single()
-
-    if (interactionError) {
-      console.error('Failed to store image interaction:', interactionError)
-      // Continue anyway, don't fail the request
     }
 
-    // Return response with blind name
+  } catch (error) {
+    console.error('Image generation error:', error)
+    return NextResponse.json(
+      { error: 'I\'m currently unavailable. Please try again later.' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * Generate image using Google Gemini (Nano Banana 🍌)
+ */
+async function generateGoogleImage(prompt: string, blindName: string) {
+  const apiKey = process.env.GOOGLE_API_KEY
+
+  if (!apiKey) {
     return NextResponse.json({
-      id: aiResponse.id,
-      imageUrl: aiResponse.imageUrl,
-      model: exerciseModel.blind_name, // Return blind name
-      provider: 'hidden', // Hide real provider
-      type: 'image',
-      interactionId: interaction?.id,
+      id: `img_${Date.now()}`,
+      imageUrl: 'https://via.placeholder.com/512x512/4F46E5/FFFFFF?text=Google+API+Key+Missing',
+      model: blindName,
+      provider: 'google-gemini',
+      prompt: prompt,
+      metadata: { error: 'API key not configured' }
+    })
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey)
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" })
+
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    
+    // Extract the image data
+    const part = response.candidates?.[0]?.content?.parts?.find(p => p.inlineData)
+    const base64Data = part?.inlineData?.data
+
+    if (!base64Data) {
+      return NextResponse.json({
+        id: `img_${Date.now()}`,
+        imageUrl: 'https://via.placeholder.com/512x512/EF4444/FFFFFF?text=Nano+Banana+Failed',
+        model: blindName,
+        provider: 'google-gemini',
+        prompt: prompt,
+        metadata: { error: 'No image data returned' }
+      })
+    }
+
+    return NextResponse.json({
+      id: `img_${Date.now()}`,
+      imageUrl: `data:image/png;base64,${base64Data}`,
+      model: blindName,
+      provider: 'google-gemini',
+      prompt: prompt,
       metadata: {
-        size: options?.size || '1024x1024',
-        quality: options?.quality || 'standard',
-        // Include safe metadata, hide sensitive info
-        ...(aiResponse.metadata?.note ? { note: aiResponse.metadata.note } : {})
+        size: 'variable',
+        timestamp: new Date().toISOString()
       }
     })
 
   } catch (error) {
-    console.error('AI Image API Error:', error)
-    
-    return NextResponse.json(
-      { 
-        error: 'Failed to generate AI image',
-        details: error instanceof Error ? error.message : 'Unknown error'
+    console.error('Google image generation error:', error)
+    return NextResponse.json({
+      id: `img_${Date.now()}`,
+      imageUrl: 'https://via.placeholder.com/512x512/EF4444/FFFFFF?text=Nano+Banana+Error',
+      model: blindName,
+      provider: 'google-gemini',
+      prompt: prompt,
+      metadata: { error: error.message }
+    })
+  }
+}
+
+/**
+ * Generate image using DALL-E 3 (fallback for non-Google models)
+ */
+async function generateDallEImage(prompt: string, blindName: string) {
+  const apiKey = process.env.OPENAI_API_KEY
+
+  if (!apiKey) {
+    return NextResponse.json({
+      id: `img_${Date.now()}`,
+      imageUrl: 'https://via.placeholder.com/512x512/4F46E5/FFFFFF?text=OpenAI+API+Key+Missing',
+      model: blindName,
+      provider: 'dall-e-3',
+      prompt: prompt,
+      metadata: { error: 'API key not configured' }
+    })
+  }
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
-      { status: 500 }
-    )
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt: prompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'standard',
+        response_format: 'url'
+      }),
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      console.error('DALL-E 3 API error:', error)
+      
+      return NextResponse.json({
+        id: `img_${Date.now()}`,
+        imageUrl: 'https://via.placeholder.com/512x512/EF4444/FFFFFF?text=DALL-E+Failed',
+        model: blindName,
+        provider: 'dall-e-3',
+        prompt: prompt,
+        metadata: { error: 'Generation failed' }
+      })
+    }
+
+    const data = await response.json()
+    const imageUrl = data.data?.[0]?.url
+
+    if (!imageUrl) {
+      return NextResponse.json({
+        id: `img_${Date.now()}`,
+        imageUrl: 'https://via.placeholder.com/512x512/EF4444/FFFFFF?text=No+Image+Returned',
+        model: blindName,
+        provider: 'dall-e-3',
+        prompt: prompt,
+        metadata: { error: 'No image URL returned' }
+      })
+    }
+
+    return NextResponse.json({
+      id: `img_${Date.now()}`,
+      imageUrl: imageUrl,
+      model: blindName,
+      provider: 'dall-e-3',
+      prompt: prompt,
+      metadata: {
+        size: '1024x1024',
+        quality: 'standard',
+        timestamp: new Date().toISOString()
+      }
+    })
+
+  } catch (error) {
+    console.error('DALL-E 3 generation error:', error)
+    return NextResponse.json({
+      id: `img_${Date.now()}`,
+      imageUrl: 'https://via.placeholder.com/512x512/EF4444/FFFFFF?text=DALL-E+Error',
+      model: blindName,
+      provider: 'dall-e-3',
+      prompt: prompt,
+      metadata: { error: error.message }
+    })
   }
 }

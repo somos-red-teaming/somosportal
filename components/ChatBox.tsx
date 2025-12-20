@@ -3,7 +3,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Send, User, Bot, Copy } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Slider } from '@/components/ui/slider'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Send, User, Bot, Copy, Image, Flag } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -12,6 +17,7 @@ interface Message {
   type: 'user' | 'ai'
   content: string
   timestamp: Date
+  imageUrl?: string // Add optional image URL for image messages
 }
 
 interface ChatBoxProps {
@@ -20,6 +26,18 @@ interface ChatBoxProps {
   exerciseId: string
   onSendMessage?: (message: string) => void
 }
+
+const flagCategoryOptions = [
+  { value: 'harmful_content', label: 'Harmful Content' },
+  { value: 'misinformation', label: 'Misinformation' },
+  { value: 'bias_discrimination', label: 'Bias & Discrimination' },
+  { value: 'privacy_violation', label: 'Privacy Violation' },
+  { value: 'inappropriate_response', label: 'Inappropriate Response' },
+  { value: 'factual_error', label: 'Factual Error' },
+  { value: 'off_topic', label: 'Off Topic' },
+  { value: 'spam', label: 'Spam' },
+  { value: 'other', label: 'Other' }
+]
 
 /**
  * Individual chatbox component for conversation with a single AI model
@@ -35,6 +53,12 @@ export function ChatBox({ modelName, modelId, exerciseId, onSendMessage }: ChatB
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+
+  // Flagging state
+  const [flagCategories, setFlagCategories] = useState<string[]>([]) // Changed to array for multiple selection
+  const [severity, setSeverity] = useState([5])
+  const [flagComment, setFlagComment] = useState('')
+  const [isSubmittingFlag, setIsSubmittingFlag] = useState(false)
 
   /**
    * Auto-scroll to bottom when new messages arrive - contained within chatbox
@@ -79,6 +103,119 @@ export function ChatBox({ modelName, modelId, exerciseId, onSendMessage }: ChatB
     } catch (error) {
       console.error('Failed to copy:', error)
     }
+  }
+
+  /**
+   * Handle flag submission for this conversation
+   */
+  const handleSubmitFlag = async () => {
+    if (flagCategories.length === 0 || !flagComment.trim() || isSubmittingFlag) return
+
+    setIsSubmittingFlag(true)
+
+    try {
+      const response = await fetch('/api/flags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          exerciseId,
+          modelId,
+          categories: flagCategories,
+          severity: severity[0],
+          comment: flagComment,
+          messages: messages // Full conversation context
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Reset form
+        setFlagCategories([])
+        setSeverity([5])
+        setFlagComment('')
+        
+        // Show success message
+        const selectedLabels = flagCategories.map(cat => 
+          flagCategoryOptions.find(c => c.value === cat)?.label
+        ).join(', ')
+        alert(`Flag submitted for ${modelName}!\nCategories: ${selectedLabels}\nSeverity: ${severity[0]}/10\n\nThank you for helping improve AI safety!`)
+      } else {
+        alert('Failed to submit flag: ' + (data.error || 'Unknown error'))
+      }
+
+    } catch (error) {
+      console.error('Error submitting flag:', error)
+      alert('Failed to submit flag. Please try again.')
+    } finally {
+      setIsSubmittingFlag(false)
+    }
+  }
+
+  /**
+   * Handle image generation request
+   */
+  const handleGenerateImage = async () => {
+    if (!inputMessage.trim() || isLoading) return
+
+    const prompt = inputMessage.trim()
+    setInputMessage('')
+    setIsLoading(true)
+
+    // Add user message for image request
+    const userMessage: Message = {
+      id: `user-${Date.now()}`,
+      type: 'user',
+      content: `🖼️ Generate image: ${prompt}`,
+      timestamp: new Date()
+    }
+    setMessages(prev => [...prev, userMessage])
+
+    try {
+      const response = await fetch('/api/ai/image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          modelId,
+          blindName: modelName,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.imageUrl) {
+        const aiMessage: Message = {
+          id: `ai-${Date.now()}`,
+          type: 'ai',
+          content: `Generated image for: "${prompt}"`,
+          timestamp: new Date(),
+          imageUrl: data.imageUrl
+        }
+        setMessages(prev => [...prev, aiMessage])
+      } else {
+        const errorMessage: Message = {
+          id: `error-${Date.now()}`,
+          type: 'ai',
+          content: "I'm currently unable to generate images. Please try again later.",
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, errorMessage])
+      }
+    } catch (error) {
+      console.error('Error generating image:', error)
+      const errorMessage: Message = {
+        id: `error-${Date.now()}`,
+        type: 'ai',
+        content: "I'm currently unable to generate images. Please try again later.",
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
+
+    onSendMessage?.(prompt)
   }
 
   /**
@@ -270,7 +407,90 @@ export function ChatBox({ modelName, modelId, exerciseId, onSendMessage }: ChatB
         <h3 className="font-semibold text-xs sm:text-sm text-gray-900 dark:text-gray-100 truncate min-w-0">
           {modelName}
         </h3>
-        <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0 ml-2"></div>
+        <div className="flex items-center gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 w-6 sm:h-8 sm:w-8 p-0 flex-shrink-0"
+                title={`Flag issue with ${modelName}`}
+              >
+                <Flag className="h-3 w-3 sm:h-4 sm:w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Flag className="h-5 w-5" />
+                  Flag Issue with {modelName}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Categories (select multiple)</Label>
+                  <ScrollArea className="h-[180px] rounded-md border p-2 mt-1">
+                    {flagCategoryOptions.map((cat) => (
+                      <div 
+                        key={cat.value} 
+                        className={`flex items-center gap-2 p-2 rounded cursor-pointer ${
+                          flagCategories.includes(cat.value) ? 'bg-primary/10' : 'hover:bg-accent'
+                        }`} 
+                        onClick={() => {
+                          if (flagCategories.includes(cat.value)) {
+                            setFlagCategories(flagCategories.filter(c => c !== cat.value))
+                          } else {
+                            setFlagCategories([...flagCategories, cat.value])
+                          }
+                        }}
+                      >
+                        <Checkbox checked={flagCategories.includes(cat.value)} />
+                        <span className="text-sm">{cat.label}</span>
+                      </div>
+                    ))}
+                  </ScrollArea>
+                </div>
+                <div>
+                  <Label>Severity (1-10)</Label>
+                  <div className="px-2 mt-2">
+                    <Slider
+                      value={severity}
+                      onValueChange={setSeverity}
+                      max={10}
+                      min={1}
+                      step={1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>1 (Minor)</span>
+                      <span className="font-medium">{severity[0]}</span>
+                      <span>10 (Severe)</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <Label>Comment</Label>
+                  <Textarea 
+                    placeholder="Describe the issue with this conversation..." 
+                    value={flagComment} 
+                    onChange={(e) => setFlagComment(e.target.value)} 
+                    rows={3} 
+                    className="mt-1" 
+                  />
+                </div>
+                <Button 
+                  onClick={handleSubmitFlag} 
+                  className="w-full" 
+                  disabled={flagCategories.length === 0 || !flagComment.trim() || isSubmittingFlag}
+                >
+                  <Flag className="mr-2 h-4 w-4" />
+                  {isSubmittingFlag ? 'Submitting...' : 'Submit Flag'}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
+        </div>
       </div>
 
       {/* Messages Area - Fixed height with internal scroll only, strict containment */}
@@ -320,11 +540,24 @@ export function ChatBox({ modelName, modelId, exerciseId, onSendMessage }: ChatB
                         {message.content}
                       </p>
                     ) : (
-                      <div className="prose prose-sm max-w-none dark:prose-invert min-w-0 overflow-hidden">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                          {message.content}
-                        </ReactMarkdown>
-                      </div>
+                      <>
+                        <div className="prose prose-sm max-w-none dark:prose-invert min-w-0 overflow-hidden">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                            {message.content}
+                          </ReactMarkdown>
+                        </div>
+                        {/* Display image if present */}
+                        {message.imageUrl && (
+                          <div className="mt-2">
+                            <img 
+                              src={message.imageUrl} 
+                              alt="Generated image"
+                              className="max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600"
+                              style={{ maxHeight: '300px' }}
+                            />
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
 
@@ -398,6 +631,20 @@ export function ChatBox({ modelName, modelId, exerciseId, onSendMessage }: ChatB
             disabled={isLoading}
             style={{ fieldSizing: 'content' } as any}
           />
+          <Button
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              handleGenerateImage()
+            }}
+            disabled={!inputMessage.trim() || isLoading}
+            size="sm"
+            variant="outline"
+            className="px-2 sm:px-3 flex-shrink-0 h-8 sm:h-9"
+            title="Generate Image"
+          >
+            <Image className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </Button>
           <Button
             onClick={(e) => {
               e.preventDefault()

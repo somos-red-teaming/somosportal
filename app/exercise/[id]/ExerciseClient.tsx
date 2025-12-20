@@ -12,7 +12,9 @@ import { Slider } from '@/components/ui/slider'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Header } from '@/components/header'
 import { ChatBox } from '@/components/ChatBox'
-import { AlertCircle, Info, ArrowLeft, Users, Calendar, CheckCircle, Flag } from 'lucide-react'
+import { AlertCircle, Info, ArrowLeft, Users, Calendar, CheckCircle } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { supabase } from '@/lib/supabase'
 import { getExerciseModels } from '@/lib/blind-assignment'
 import { useAuth } from '@/hooks/useAuth'
@@ -72,9 +74,6 @@ export default function ExerciseClient() {
   const [error, setError] = useState<string | null>(null)
 
   const [selectedModels, setSelectedModels] = useState<string[]>([])
-  const [flagCategory, setFlagCategory] = useState('')
-  const [severity, setSeverity] = useState([5])
-  const [flagComment, setFlagComment] = useState('')
 
   useEffect(() => {
     fetchData()
@@ -157,13 +156,7 @@ export default function ExerciseClient() {
     console.log('Message sent:', message)
   }
 
-  const handleSubmitFlag = () => {
-    if (!flagCategory || !flagComment.trim()) return
-    alert(`Flag submitted!\nCategory: ${flagCategory}\nSeverity: ${severity[0]}/10`)
-    setFlagCategory('')
-    setSeverity([5])
-    setFlagComment('')
-  }
+
 
   if (loading) {
     return (
@@ -232,22 +225,32 @@ export default function ExerciseClient() {
         </div>
 
         {participation ? (
-          <div className="grid gap-6 lg:grid-cols-12">
-            <div className="lg:col-span-3">
+          <div className="grid gap-6 lg:grid-cols-4">
+            <div className="lg:col-span-1">
               <Card className="sticky top-20">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Info className="h-5 w-5" />Guidelines</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Info className="h-5 w-5" />
+                    Guidelines
+                  </CardTitle>
+                  <CardDescription>
+                    Follow these guidelines while testing the AI models
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ScrollArea className="h-[400px] pr-4">
-                    <div className="text-sm text-muted-foreground whitespace-pre-wrap">{exercise.guidelines}</div>
+                  <ScrollArea className="h-[500px] pr-4">
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {exercise.guidelines}
+                      </ReactMarkdown>
+                    </div>
                   </ScrollArea>
                 </CardContent>
               </Card>
             </div>
 
             {/* Chat Interface - Fixed mobile layout with overflow protection */}
-            <div className="lg:col-span-6 -mx-2 sm:-mx-0">
+            <div className="lg:col-span-3 -mx-2 sm:-mx-0">
               <div className="w-full overflow-hidden">
                 {models.length === 0 ? (
                   <Card className="text-center py-12">
@@ -288,38 +291,6 @@ export default function ExerciseClient() {
                 )}
               </div>
             </div>
-
-            <div className="lg:col-span-3">
-              <Card className="sticky top-20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Flag className="h-5 w-5" />Flag Issue</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>Category</Label>
-                    <ScrollArea className="h-[180px] rounded-md border p-2 mt-1">
-                      {flagCategories.map((cat) => (
-                        <div key={cat.value} className={`flex items-center gap-2 p-2 rounded cursor-pointer ${flagCategory === cat.value ? 'bg-primary/10' : 'hover:bg-accent'}`} onClick={() => setFlagCategory(cat.value)}>
-                          <Checkbox checked={flagCategory === cat.value} />
-                          <span className="text-sm">{cat.label}</span>
-                        </div>
-                      ))}
-                    </ScrollArea>
-                  </div>
-                  <div>
-                    <div className="flex justify-between"><Label>Severity</Label><span className="text-sm">{severity[0]}/10</span></div>
-                    <Slider value={severity} onValueChange={setSeverity} min={1} max={10} className="mt-2" />
-                  </div>
-                  <div>
-                    <Label>Comment</Label>
-                    <Textarea placeholder="Describe the issue..." value={flagComment} onChange={(e) => setFlagComment(e.target.value)} rows={3} className="mt-1" />
-                  </div>
-                  <Button onClick={handleSubmitFlag} className="w-full" disabled={!flagCategory || !flagComment}>
-                    <Flag className="mr-2 h-4 w-4" />Submit Flag
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
           </div>
         ) : (
           <Card className="text-center py-12">
@@ -329,7 +300,14 @@ export default function ExerciseClient() {
               <p className="text-muted-foreground mb-4">You need to join this exercise to access the testing interface.</p>
               <div className="bg-muted p-4 rounded-lg text-left max-w-xl mx-auto">
                 <h3 className="font-medium mb-2">Guidelines Preview:</h3>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{exercise.guidelines.slice(0, 300)}{exercise.guidelines.length > 300 ? '...' : ''}</p>
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {exercise.guidelines.length > 300 
+                      ? exercise.guidelines.slice(0, 300) + '...'
+                      : exercise.guidelines
+                    }
+                  </ReactMarkdown>
+                </div>
               </div>
             </CardContent>
           </Card>
