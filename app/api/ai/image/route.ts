@@ -132,7 +132,7 @@ async function generateGoogleImage(prompt: string, blindName: string) {
       model: blindName,
       provider: 'google-gemini',
       prompt: prompt,
-      metadata: { error: error.message }
+      metadata: { error: error instanceof Error ? error.message : String(error) }
     })
   }
 }
