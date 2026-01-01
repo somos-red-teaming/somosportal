@@ -2,7 +2,15 @@
 
 > Democratizing AI governance through structured public participation in red teaming exercises.
 
-## 🎉 Current Sprint: Week 9 Advanced Features 100% Complete ✅
+## 🎉 Current Sprint: Week 10 Production Launch ⏳
+
+### ✅ Week 10 Progress (In Progress)
+- [x] Rate limiting middleware (40 req/min per IP)
+- [x] Credits system (per-model cost, live balance updates)
+- [x] Security audit (RLS policies, indexes verified)
+- [x] Accessibility improvements (aria-labels)
+- [ ] Lighthouse optimization (75% perf, 96% best practices, 100% SEO)
+- [ ] Production deployment prep
 
 ### ✅ Week 9 Advanced Features Complete (100%)
 - [x] Admin flagging analytics dashboard (`/admin/flags`)
@@ -55,11 +63,6 @@
 - [x] Google & GitHub OAuth integration
 - [x] User profile system with database integration
 - [x] Password reset functionality
-
-### 📋 Next Up (Week 10)
-- [ ] Performance optimization (Lighthouse 90+)
-- [ ] Security audit
-- [ ] Production launch preparation
 
 ## 🚀 Live Demo
 - **Production Site:** [somos.website](https://somos.website)

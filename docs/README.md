@@ -18,6 +18,14 @@
 - ✅ Fixed user attribution for flags
 - ✅ UX improvements (auto-focus, dialog close on submit)
 
+### 🏆 Week 10 Progress: Production Launch (In Progress)
+- ✅ Rate limiting middleware (40 req/min per IP)
+- ✅ Credits system (per-model cost, live balance updates)
+- ✅ Security audit (RLS policies, indexes verified)
+- ✅ Accessibility improvements (aria-labels)
+- ⏳ Lighthouse optimization (75% perf, 96% best practices, 100% SEO)
+- ⏳ Production deployment prep
+
 ### 🏆 Week 7-8 Achievement: AI Integration Complete (100%)
 - ✅ Multi-provider AI integration (Google Gemini, Groq Llama, OpenAI, Anthropic)
 - ✅ **Custom model support** - Add unlimited custom APIs via Admin UI
@@ -92,6 +100,8 @@ Track progress and deliverables for each development week:
 | [Mobile Optimization](./technical/mobile-optimization.md) | Responsive design and touch handling |
 | [Flagging Analytics System](./technical/flagging-analytics-system.md) | Flag management, charts, export APIs |
 | [Security Documentation](./technical/security-documentation.md) | Authentication, RLS, data protection |
+| [Rate Limiting](./technical/rate-limiting.md) | API rate limiting middleware |
+| [Credits System](./technical/credits-system.md) | User credits and model costs |
 | [Testing & Monitoring](./technical/testing-monitoring.md) | Playwright, Sentry, Snyk |
 
 ### 📋 Non-Technical Documentation
@@ -102,6 +112,7 @@ Track progress and deliverables for each development week:
 | [Testing Strategy](./non-technical/testing-strategy.md) | Automated testing approach and methodology |
 | [Admin AI Exercise Guide](./non-technical/admin-ai-exercise-guide.md) | Creating exercises with AI models |
 | [Admin Flag Management Guide](./non-technical/admin-flag-management-guide.md) | Reviewing and managing flags |
+| [Admin Credits Guide](./non-technical/admin-credits-guide.md) | Managing user credits |
 | [Data Export Guide](./non-technical/data-export-guide.md) | Exporting platform data |
 | [Participant Chat Guide](./non-technical/participant-chat-guide.md) | Using the AI chat interface |
 | [Flagging Guide](./non-technical/flagging-guide.md) | Reporting problematic content |
@@ -173,6 +184,7 @@ Track progress and deliverables for each development week:
 ### For Administrators
 - [Admin AI Exercise Guide](./non-technical/admin-ai-exercise-guide.md)
 - [Admin Flag Management Guide](./non-technical/admin-flag-management-guide.md)
+- [Admin Credits Guide](./non-technical/admin-credits-guide.md)
 - [Week 9-10 Final Launch](./milestones/week9-10-final-launch.md)
 - [Interactive API Documentation](https://somos.website/api-docs)
 
@@ -186,4 +198,4 @@ Track progress and deliverables for each development week:
 
 ---
 
-*Last Updated: January 1, 2026 - Week 9 complete: Flagging analytics, data export, charts, conversation context*
+*Last Updated: January 1, 2026 - Week 10 in progress: Rate limiting, credits system, security audit*
