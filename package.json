@@ -80,5 +80,12 @@
     "tailwindcss": "^4.1.9",
     "tw-animate-css": "1.3.3",
     "typescript": "^5"
+  },
+  "pnpm": {
+    "overrides": {
+      "react-debounce-input@3.3.0>react": "^19.0.0",
+      "react-copy-to-clipboard@5.1.0>react": "^19.0.0",
+      "react-inspector@6.0.2>react": "^19.0.0"
+    }
   }
 }
