@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 
 /**
  * API endpoint for submitting flags
- * Saves flag and conversation context to database
+ * Saves flag with full conversation context to database
  */
 export async function POST(request: NextRequest) {
   try {
@@ -13,7 +13,8 @@ export async function POST(request: NextRequest) {
       categories, 
       severity, 
       comment, 
-      messages 
+      messages,
+      userId // Accept userId from client
     } = await request.json()
 
     if (!exerciseId || !modelId || !categories?.length || !comment?.trim()) {
@@ -28,96 +29,71 @@ export async function POST(request: NextRequest) {
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     )
 
-    // Get user from request headers (you might need to adjust this)
-    // For now, let's create a test user or use a real one
-    let userId = 'placeholder-user-id'
-    
-    // Try to get a real user from the database
-    const { data: users } = await supabase
-      .from('users')
-      .select('id')
-      .limit(1)
-    
-    if (users && users.length > 0) {
-      userId = users[0].id
-    } else {
-      // Create a test user for flagging
-      const { data: newUser } = await supabase
+    // If userId provided, verify it exists
+    let finalUserId = userId
+    if (userId) {
+      const { data: user } = await supabase
         .from('users')
-        .insert({
-          email: 'test-flagging@example.com',
-          role: 'participant'
-        })
-        .select()
+        .select('id')
+        .eq('id', userId)
         .single()
-      
-      if (newUser) {
-        userId = newUser.id
-      }
+      if (!user) finalUserId = null
     }
 
-    // Save each message as an interaction
-    const interactions = []
-    const sessionId = crypto.randomUUID() // Generate a session ID for this conversation
-    
-    for (const message of messages) {
-      const { data: interaction, error: interactionError } = await supabase
-        .from('interactions')
-        .insert({
-          exercise_id: exerciseId,
-          user_id: userId,
-          model_id: modelId,
-          session_id: sessionId,
-          prompt: message.type === 'user' ? message.content : '[AI Response]', // Provide default for AI messages
-          response: message.type === 'ai' ? message.content : null,
-          created_at: message.timestamp
-        })
-        .select()
-        .single()
-
-      if (interactionError) {
-        console.error('Error saving interaction:', interactionError)
-        // Don't continue, but don't fail completely
-      } else {
-        interactions.push(interaction)
-      }
+    // Fallback: get first user (for backwards compatibility)
+    if (!finalUserId) {
+      const { data: users } = await supabase.from('users').select('id').limit(1)
+      finalUserId = users?.[0]?.id
     }
 
-    // Save flags for each category
-    const flags = []
-    for (const category of categories) {
-      const { data: flag, error: flagError } = await supabase
-        .from('flags')
-        .insert({
-          user_id: userId,
-          interaction_id: interactions[interactions.length - 1]?.id, // Link to last interaction
-          category: category,
-          severity: severity,
-          title: `Flag from ${exerciseId}`, // Required field
-          description: comment,
-          evidence: { 
-            modelId, 
-            conversationLength: messages.length,
-            timestamp: new Date().toISOString()
-          },
-          status: 'pending'
-        })
-        .select()
-        .single()
+    if (!finalUserId) {
+      return NextResponse.json({ error: 'No user found' }, { status: 400 })
+    }
 
-      if (flagError) {
-        console.error('Error saving flag:', flagError)
-        // Don't continue, but don't fail completely  
-      } else {
-        flags.push(flag)
-      }
+    // Create single interaction to link the flag
+    const { data: interaction } = await supabase
+      .from('interactions')
+      .insert({
+        exercise_id: exerciseId,
+        user_id: finalUserId,
+        model_id: modelId,
+        session_id: crypto.randomUUID(),
+        prompt: messages.find((m: { type: string }) => m.type === 'user')?.content || '',
+        response: messages.filter((m: { type: string }) => m.type === 'ai').pop()?.content || null,
+      })
+      .select()
+      .single()
+
+    // Create ONE flag with categories as array in evidence, full conversation stored
+    const { data: flag, error: flagError } = await supabase
+      .from('flags')
+      .insert({
+        user_id: finalUserId,
+        interaction_id: interaction?.id,
+        category: categories[0],
+        severity: severity,
+        title: `Flag: ${categories.join(', ')}`,
+        description: comment,
+        evidence: { 
+          modelId,
+          categories,
+          conversation: messages,
+          timestamp: new Date().toISOString()
+        },
+        status: 'pending'
+      })
+      .select()
+      .single()
+
+    if (flagError) {
+      console.error('Error saving flag:', flagError)
+      return NextResponse.json({ error: 'Failed to save flag' }, { status: 500 })
     }
 
     return NextResponse.json({
       success: true,
       message: 'Flag submitted successfully',
-      flagsCreated: flags.length,
-      interactionsCreated: interactions.length
+      flagId: flag.id
     })
 
   } catch (error) {

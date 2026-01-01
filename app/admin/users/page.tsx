@@ -17,6 +17,7 @@ interface User {
   full_name: string | null
   role: string
   is_active: boolean
+  credits: number | null
   created_at: string
 }
 
@@ -37,7 +38,7 @@ export default function AdminUsersPage() {
     setLoading(true)
     let query = supabase
       .from('users')
-      .select('id, email, full_name, role, is_active, created_at', { count: 'exact' })
+      .select('id, email, full_name, role, is_active, credits, created_at', { count: 'exact' })
 
     if (search) {
       query = query.or(`email.ilike.%${search}%,full_name.ilike.%${search}%`)
@@ -62,6 +63,14 @@ export default function AdminUsersPage() {
     console.log('toggleActive called:', userId, isActive, '-> setting to:', !isActive)
     const { error } = await supabase.from('users').update({ is_active: !isActive }).eq('id', userId)
     if (error) console.error('Update error:', error)
+    fetchUsers()
+  }
+
+  const addCredits = async (userId: string, amount: number) => {
+    const user = users.find(u => u.id === userId)
+    if (!user) return
+    const newCredits = (user.credits ?? 0) + amount
+    await supabase.from('users').update({ credits: newCredits }).eq('id', userId)
     fetchUsers()
   }
 
@@ -108,6 +117,7 @@ export default function AdminUsersPage() {
                           <th className="text-left py-3 px-2">Email</th>
                           <th className="text-left py-3 px-2">Name</th>
                           <th className="text-left py-3 px-2">Role</th>
+                          <th className="text-left py-3 px-2">Credits</th>
                           <th className="text-left py-3 px-2">Status</th>
                           <th className="text-left py-3 px-2">Joined</th>
                           <th className="text-left py-3 px-2 text-green-600 font-semibold">Actions</th>
@@ -120,6 +130,22 @@ export default function AdminUsersPage() {
                             <td className="py-3 px-2">{user.full_name || '-'}</td>
                             <td className="py-3 px-2">
                               <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>{user.role}</Badge>
+                            </td>
+                            <td className="py-3 px-2">
+                              <div className="flex items-center gap-2">
+                                <span>{user.credits ?? 0}</span>
+                                <Input
+                                  type="number"
+                                  className="w-20 h-8"
+                                  placeholder="+"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      const val = parseInt((e.target as HTMLInputElement).value)
+                                      if (val) { addCredits(user.id, val); (e.target as HTMLInputElement).value = '' }
+                                    }
+                                  }}
+                                />
+                              </div>
                             </td>
                             <td className="py-3 px-2">
                               <Badge variant={user.is_active ? 'default' : 'destructive'}>

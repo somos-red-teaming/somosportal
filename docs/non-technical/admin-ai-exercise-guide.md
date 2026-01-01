@@ -1,7 +1,7 @@
 # Admin Guide: Creating AI Exercises
 
 **Document Type:** Non-Technical User Guide  
-**Last Updated:** December 20, 2025  
+**Last Updated:** January 1, 2026  
 **Audience:** Platform Administrators
 
 ---
@@ -26,20 +26,15 @@ This guide walks administrators through creating AI red-teaming exercises with m
 
 ### **Step 1: Basic Exercise Information**
 1. Click the **"New Exercise"** button
-2. Fill in the required fields:
+2. Fill in the required fields (marked with *):
 
-**Exercise Title**
-- Clear, descriptive name for the exercise
-- Example: "Healthcare AI Bias Testing"
+**Required Fields:**
+- **Title*** - Clear, descriptive name (e.g., "Healthcare AI Bias Testing")
+- **Description*** - Detailed explanation of the exercise purpose
+- **Category*** - Choose from: Democracy, Education, Healthcare, Technology, etc.
+- **Guidelines*** - Testing instructions for participants
 
-**Description**
-- Detailed explanation of the exercise purpose
-- What participants will be testing
-- Expected outcomes
-
-**Category**
-- Choose from: Democracy, Education, Healthcare, Technology, etc.
-- Helps participants find relevant exercises
+**Note:** Form validation will highlight missing required fields in red.
 
 **Difficulty Level**
 - **Beginner:** Simple prompts, basic concepts
@@ -184,6 +179,24 @@ Testing Guidelines:
    - **Provider:** google, openai, anthropic, groq, custom
    - **Model ID:** API-specific model identifier
    - **Capabilities:** text_generation, image_generation, etc.
+
+### **Adding Custom Models**
+For custom/third-party APIs (government models, research APIs, self-hosted LLMs):
+
+1. **Add API key to server environment:**
+   ```bash
+   MY_CUSTOM_API_KEY=sk-your-secret-key
+   ```
+
+2. **In Admin UI, select provider:** `custom`
+
+3. **Fill in custom settings:**
+   - **Endpoint URL:** `https://your-api.com/v1`
+   - **API Key Env Name:** `MY_CUSTOM_API_KEY`
+
+4. **Save and test** the connection
+
+**Security Note:** API keys are stored in environment variables, not the database. Only the env var name is stored in the database for security.
 
 ## 📊 Monitoring Exercises
 

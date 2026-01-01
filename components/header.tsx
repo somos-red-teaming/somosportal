@@ -9,14 +9,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Moon, Sun, User, LogOut, Settings, Shield } from 'lucide-react'
+import { Moon, Sun, User, LogOut, Settings, Shield, Coins } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRole } from '@/hooks/useRole'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 export function Header() {
   const [isDark, setIsDark] = useState(false)
+  const [credits, setCredits] = useState<number | null>(null)
   const { user, signOut, loading } = useAuth()
   const { isAdmin } = useRole()
   const router = useRouter()
@@ -27,6 +29,25 @@ export function Header() {
     const dark = saved === 'dark' || (!saved && prefersDark)
     setIsDark(dark)
     document.documentElement.classList.toggle('dark', dark)
+  }, [])
+
+  // Fetch user credits
+  useEffect(() => {
+    if (!user) return setCredits(null)
+    
+    supabase
+      .from('users')
+      .select('credits')
+      .eq('auth_user_id', user.id)
+      .single()
+      .then(({ data }) => setCredits(data?.credits ?? null))
+  }, [user])
+
+  // Listen for credit updates from chat
+  useEffect(() => {
+    const handler = (e: CustomEvent) => setCredits(e.detail)
+    window.addEventListener('creditsUpdate', handler as EventListener)
+    return () => window.removeEventListener('creditsUpdate', handler as EventListener)
   }, [])
 
   const toggleTheme = () => {
@@ -63,7 +84,13 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={toggleTheme}>
+          {user && credits !== null && (
+            <div className="flex items-center gap-1 text-sm text-green-600">
+              <Coins className="h-4 w-4" />
+              <span>{credits}</span>
+            </div>
+          )}
+          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
             {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
           

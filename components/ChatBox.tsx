@@ -24,7 +24,9 @@ interface ChatBoxProps {
   modelName: string
   modelId: string
   exerciseId: string
+  userId?: string
   onSendMessage?: (message: string) => void
+  onCreditsUpdate?: (credits: number) => void
 }
 
 const flagCategoryOptions = [
@@ -39,6 +41,39 @@ const flagCategoryOptions = [
   { value: 'other', label: 'Other' }
 ]
 
+const flagTemplates = [
+  { 
+    name: 'Harmful Content', 
+    categories: ['harmful_content'], 
+    severity: 8, 
+    comment: 'AI generated potentially harmful content including: ' 
+  },
+  { 
+    name: 'Factual Error', 
+    categories: ['factual_error'], 
+    severity: 5, 
+    comment: 'AI provided incorrect information about: ' 
+  },
+  { 
+    name: 'Bias Detected', 
+    categories: ['bias_discrimination'], 
+    severity: 7, 
+    comment: 'Response shows bias toward: ' 
+  },
+  { 
+    name: 'Misinformation', 
+    categories: ['misinformation'], 
+    severity: 8, 
+    comment: 'AI spread false information regarding: ' 
+  },
+  { 
+    name: 'Privacy Issue', 
+    categories: ['privacy_violation'], 
+    severity: 9, 
+    comment: 'AI disclosed or requested sensitive information: ' 
+  },
+]
+
 /**
  * Individual chatbox component for conversation with a single AI model
  * Optimized for both desktop and mobile with proper responsive design
@@ -47,18 +82,20 @@ const flagCategoryOptions = [
  * @param exerciseId - Exercise ID for context
  * @param onSendMessage - Callback when user sends a message
  */
-export function ChatBox({ modelName, modelId, exerciseId, onSendMessage }: ChatBoxProps) {
+export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage, onCreditsUpdate }: ChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   // Flagging state
   const [flagCategories, setFlagCategories] = useState<string[]>([]) // Changed to array for multiple selection
   const [severity, setSeverity] = useState([5])
   const [flagComment, setFlagComment] = useState('')
   const [isSubmittingFlag, setIsSubmittingFlag] = useState(false)
+  const [flagDialogOpen, setFlagDialogOpen] = useState(false)
 
   /**
    * Auto-scroll to bottom when new messages arrive - contained within chatbox
@@ -123,17 +160,19 @@ export function ChatBox({ modelName, modelId, exerciseId, onSendMessage }: ChatB
           categories: flagCategories,
           severity: severity[0],
           comment: flagComment,
-          messages: messages // Full conversation context
+          messages: messages,
+          userId // Pass userId to API
         }),
       })
 
       const data = await response.json()
 
       if (data.success) {
-        // Reset form
+        // Reset form and close dialog
         setFlagCategories([])
         setSeverity([5])
         setFlagComment('')
+        setFlagDialogOpen(false)
         
         // Show success message
         const selectedLabels = flagCategories.map(cat => 
@@ -243,12 +282,22 @@ export function ChatBox({ modelName, modelId, exerciseId, onSendMessage }: ChatB
           exerciseId,
           modelId,
           prompt: userMessage.content,
+          userId,
+          history: messages.map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: m.content }))
         }),
       })
 
       const data = await response.json()
 
-      if (data.success) {
+      if (response.status === 402) {
+        const errorMessage: Message = {
+          id: `error-${Date.now()}`,
+          type: 'ai',
+          content: `Insufficient credits. You need ${data.creditsRequired} credits but have ${data.creditsAvailable}. Contact an admin for more credits.`,
+          timestamp: new Date()
+        }
+        setMessages(prev => [...prev, errorMessage])
+      } else if (data.success) {
         const aiMessage: Message = {
           id: `ai-${Date.now()}`,
           type: 'ai',
@@ -256,6 +305,9 @@ export function ChatBox({ modelName, modelId, exerciseId, onSendMessage }: ChatB
           timestamp: new Date()
         }
         setMessages(prev => [...prev, aiMessage])
+        if (data.creditsRemaining !== null && data.creditsRemaining !== undefined) {
+          onCreditsUpdate?.(data.creditsRemaining)
+        }
       } else {
         const errorMessage: Message = {
           id: `error-${Date.now()}`,
@@ -276,6 +328,7 @@ export function ChatBox({ modelName, modelId, exerciseId, onSendMessage }: ChatB
       setMessages(prev => [...prev, errorMessage])
     } finally {
       setIsLoading(false)
+      setTimeout(() => inputRef.current?.focus(), 100)
     }
 
     onSendMessage?.(userMessage.content)
@@ -408,7 +461,7 @@ export function ChatBox({ modelName, modelId, exerciseId, onSendMessage }: ChatB
           {modelName}
         </h3>
         <div className="flex items-center gap-2">
-          <Dialog>
+          <Dialog open={flagDialogOpen} onOpenChange={setFlagDialogOpen}>
             <DialogTrigger asChild>
               <Button
                 size="sm"
@@ -427,6 +480,27 @@ export function ChatBox({ modelName, modelId, exerciseId, onSendMessage }: ChatB
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
+                {/* Quick Templates */}
+                <div>
+                  <Label>Quick Templates</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {flagTemplates.map((t) => (
+                      <Button
+                        key={t.name}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => {
+                          setFlagCategories(t.categories)
+                          setSeverity([t.severity])
+                          setFlagComment(t.comment)
+                        }}
+                      >
+                        {t.name}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
                 <div>
                   <Label>Categories (select multiple)</Label>
                   <ScrollArea className="h-[180px] rounded-md border p-2 mt-1">
@@ -617,6 +691,7 @@ export function ChatBox({ modelName, modelId, exerciseId, onSendMessage }: ChatB
       <div className="border-t p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-b-lg flex-shrink-0 min-h-[60px] sm:min-h-[80px]">
         <div className="flex gap-1.5 sm:gap-2 h-full" onKeyDown={(e) => e.stopPropagation()}>
           <Textarea
+            ref={inputRef}
             placeholder={`Message ${modelName}...`}
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}

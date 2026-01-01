@@ -2,7 +2,18 @@
 
 > Democratizing AI governance through structured public participation in red teaming exercises.
 
-## 🎉 Current Sprint: Week 7-8 AI Integration 100% Complete ✅
+## 🎉 Current Sprint: Week 9 Advanced Features 100% Complete ✅
+
+### ✅ Week 9 Advanced Features Complete (100%)
+- [x] Admin flagging analytics dashboard (`/admin/flags`)
+- [x] Flag management (view, filter, review, resolve, dismiss)
+- [x] Analytics charts (by category, by model, top submitters)
+- [x] Data export APIs (flags, interactions, exercises)
+- [x] Admin export page with date filtering (`/admin/export`)
+- [x] Flag templates for quick submission
+- [x] AI conversation context (chat remembers history)
+- [x] Multiple categories per flag
+- [x] Full conversation stored with flags
 
 ### ✅ Week 7-8 AI Integration Complete (100%)
 - [x] Multi-provider AI integration (Google Gemini, Groq Llama, OpenAI, Anthropic)
@@ -45,16 +56,15 @@
 - [x] User profile system with database integration
 - [x] Password reset functionality
 
-### 📋 Next Up (Week 9-10)
-- [ ] Advanced flagging analytics and review interface
-- [ ] Data export functionality (CSV/JSON)
-- [ ] Performance optimization and security audit
+### 📋 Next Up (Week 10)
+- [ ] Performance optimization (Lighthouse 90+)
+- [ ] Security audit
 - [ ] Production launch preparation
 
 ## 🚀 Live Demo
 - **Production Site:** [somos.website](https://somos.website)
 - **Status:** Full AI integration operational with blind testing
-- **Features:** Real AI conversations, multi-model comparison, flagging system
+- **Features:** Real AI conversations, multi-model comparison, flagging system, analytics
 
 ## 🤖 AI Integration Features
 
@@ -63,7 +73,7 @@
 - **Groq Llama 3.1 8B Instant** - Free tier, ultra-fast inference
 - **OpenAI GPT-4 & DALL-E 3** - Ready for use (requires API credits)
 - **Anthropic Claude 3** - Ready for use (requires API credits)
-- **Custom APIs** - Support for government/research models
+- **Custom APIs** - Unlimited custom models via Admin UI (OpenAI-compatible endpoints)
 
 ### **Blind Testing System**
 - Models appear as **Alpha, Beta, Gamma** to users
@@ -77,6 +87,7 @@
 - **Mobile optimized:** Responsive with scroll isolation
 - **Rich formatting:** Markdown, code highlighting, tables
 - **Copy functionality:** Message and code block copying
+- **Conversation context:** AI remembers chat history
 
 ## 🚀 Quick Start
 
@@ -92,7 +103,21 @@ GOOGLE_API_KEY=your_google_api_key
 GROQ_API_KEY=your_groq_api_key
 OPENAI_API_KEY=your_openai_api_key
 ANTHROPIC_API_KEY=your_anthropic_api_key
+
+# Custom Model API Keys (add as needed)
+# MY_CUSTOM_API_KEY=your_custom_api_key
 ```
+
+## 🔧 Adding Custom AI Models
+
+Custom models can be added via Admin UI without code changes:
+
+1. **Add env var** for API key: `MY_MODEL_KEY=sk-xxx`
+2. **Go to Admin** → Manage Models → Add Model
+3. **Select provider:** `custom`
+4. **Enter endpoint:** `https://your-api.com/v1`
+5. **Enter env var name:** `MY_MODEL_KEY`
+6. **Save and test** connection
 
 ## 🧪 Testing
 
@@ -110,7 +135,9 @@ npm run test:ai
 ## 🏗 Week 7-8 Achievements
 
 ### **AI Provider Integration** 🤖
-- **Multi-provider support:** Google, Groq, OpenAI, Anthropic
+- **Multi-provider support:** Google, Groq, OpenAI, Anthropic, Custom
+- **Custom model support:** Add unlimited custom models via Admin UI
+- **Secure configuration:** API keys in env vars, endpoints in database
 - **Environment configuration:** Secure API key management
 - **Error handling:** Graceful degradation and retry logic
 - **Connection testing:** Admin interface for provider validation
@@ -124,6 +151,7 @@ npm run test:ai
 ### **Enhanced Exercise Creation** 📝
 - **Model assignment:** Multi-select with blind name preview
 - **Dynamic filtering:** Clean model list (removes test entries)
+- **Form validation:** Required field validation with error display
 - **Mobile responsive:** Touch-friendly admin interface
 - **Database integration:** Proper junction table storage
 
@@ -176,8 +204,8 @@ Detailed documentation available in [`/docs`](./docs/README.md)
 | 3-4 | RBAC & Admin | ✅ 100% Complete |
 | 5-6 | Exercise System | ✅ 100% Complete |
 | 7-8 | AI Integration | ✅ 100% Complete |
-| 9 | Advanced Flagging | ⏳ Up Next |
-| 10 | Production Launch | ⏳ Planned |
+| 9 | Advanced Features | ✅ 100% Complete |
+| 10 | Production Launch | ⏳ Up Next |
 
 ---
-**Latest Update:** December 20, 2025 - Week 7-8 AI Integration 100% Complete
+**Latest Update:** January 1, 2026 - Week 9 complete: Flagging analytics, data export, charts, conversation context

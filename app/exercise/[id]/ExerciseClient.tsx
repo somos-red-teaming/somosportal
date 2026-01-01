@@ -72,6 +72,7 @@ export default function ExerciseClient() {
   const [participantCount, setParticipantCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [dbUserId, setDbUserId] = useState<string | null>(null)
 
   const [selectedModels, setSelectedModels] = useState<string[]>([])
 
@@ -109,6 +110,7 @@ export default function ExerciseClient() {
       if (user) {
         const { data: userData } = await supabase.from('users').select('id').eq('auth_user_id', user.id).single()
         if (userData) {
+          setDbUserId(userData.id)
           const { data: part } = await supabase
             .from('exercise_participation')
             .select('*')
@@ -154,6 +156,11 @@ export default function ExerciseClient() {
   const handleMessageSent = (message: string) => {
     // Could be used for analytics or logging
     console.log('Message sent:', message)
+  }
+
+  const handleCreditsUpdate = (credits: number) => {
+    // Dispatch custom event for header to listen
+    window.dispatchEvent(new CustomEvent('creditsUpdate', { detail: credits }))
   }
 
 
@@ -267,7 +274,9 @@ export default function ExerciseClient() {
                       modelName={models[0].blind_name}
                       modelId={models[0].ai_models.id}
                       exerciseId={params.id as string}
+                      userId={dbUserId || undefined}
                       onSendMessage={handleMessageSent}
+                      onCreditsUpdate={handleCreditsUpdate}
                     />
                   </div>
                 ) : (
@@ -283,7 +292,9 @@ export default function ExerciseClient() {
                           modelName={model.blind_name}
                           modelId={model.ai_models.id}
                           exerciseId={params.id as string}
+                          userId={dbUserId || undefined}
                           onSendMessage={handleMessageSent}
+                          onCreditsUpdate={handleCreditsUpdate}
                         />
                       </div>
                     ))}

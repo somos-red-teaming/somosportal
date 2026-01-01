@@ -37,7 +37,12 @@ export class AIProviderFactory {
         return new GoogleProvider()
       
       case 'custom':
-        return new CustomProvider()
+        // Pass configuration from database to CustomProvider
+        return new CustomProvider({
+          endpoint: config.configuration?.endpoint,
+          apiKeyEnv: config.configuration?.apiKeyEnv,
+          modelId: config.model_id
+        })
       
       case 'groq':
         return new GroqProvider()

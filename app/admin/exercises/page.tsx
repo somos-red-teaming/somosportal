@@ -65,6 +65,7 @@ export default function AdminExercisesPage() {
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [saving, setSaving] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetchExercises()
@@ -122,11 +123,27 @@ export default function AdminExercisesPage() {
   }
 
   /**
+   * Validate form fields and return errors
+   */
+  const validateForm = (): Record<string, string> => {
+    const newErrors: Record<string, string> = {}
+    if (!form.title.trim()) newErrors.title = 'Title is required'
+    if (!form.description.trim()) newErrors.description = 'Description is required'
+    if (!form.category.trim()) newErrors.category = 'Category is required'
+    if (!form.guidelines.trim()) newErrors.guidelines = 'Guidelines are required'
+    return newErrors
+  }
+
+  /**
    * Submit exercise form - create new or update existing
    * Saves exercise data and assigns models with blind names to junction table
    */
   const handleSubmit = async () => {
-    if (!form.title || !form.description || !form.category || !form.guidelines) return
+    const validationErrors = validateForm()
+    setErrors(validationErrors)
+    
+    if (Object.keys(validationErrors).length > 0) return
+    
     setSaving(true)
     
     const { data: { user } } = await supabase.auth.getUser()
@@ -231,7 +248,7 @@ export default function AdminExercisesPage() {
             </div>
             <Dialog open={dialogOpen} onOpenChange={(open) => {
               setDialogOpen(open)
-              if (!open) { setEditingId(null); setForm(emptyExercise) }
+              if (!open) { setEditingId(null); setForm(emptyExercise); setErrors({}) }
             }}>
               <DialogTrigger asChild>
                 <Button><Plus className="h-4 w-4 mr-2" />New Exercise</Button>
@@ -243,16 +260,32 @@ export default function AdminExercisesPage() {
                 <div className="space-y-4 py-4">
                   <div>
                     <Label>Title *</Label>
-                    <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+                    <Input 
+                      value={form.title} 
+                      onChange={(e) => { setForm({ ...form, title: e.target.value }); setErrors(prev => ({ ...prev, title: '' })) }}
+                      className={errors.title ? 'border-red-500' : ''}
+                    />
+                    {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
                   </div>
                   <div>
                     <Label>Description *</Label>
-                    <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+                    <Textarea 
+                      value={form.description} 
+                      onChange={(e) => { setForm({ ...form, description: e.target.value }); setErrors(prev => ({ ...prev, description: '' })) }}
+                      className={errors.description ? 'border-red-500' : ''}
+                    />
+                    {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label>Category *</Label>
-                      <Input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g., Democracy, Education" />
+                      <Input 
+                        value={form.category} 
+                        onChange={(e) => { setForm({ ...form, category: e.target.value }); setErrors(prev => ({ ...prev, category: '' })) }} 
+                        placeholder="e.g., Democracy, Education"
+                        className={errors.category ? 'border-red-500' : ''}
+                      />
+                      {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category}</p>}
                     </div>
                     <div>
                       <Label>Difficulty</Label>
@@ -331,7 +364,14 @@ export default function AdminExercisesPage() {
                   )}
                   <div>
                     <Label>Guidelines *</Label>
-                    <Textarea value={form.guidelines} onChange={(e) => setForm({ ...form, guidelines: e.target.value })} rows={4} placeholder="Testing guidelines..." />
+                    <Textarea 
+                      value={form.guidelines} 
+                      onChange={(e) => { setForm({ ...form, guidelines: e.target.value }); setErrors(prev => ({ ...prev, guidelines: '' })) }} 
+                      rows={4} 
+                      placeholder="Testing guidelines..."
+                      className={errors.guidelines ? 'border-red-500' : ''}
+                    />
+                    {errors.guidelines && <p className="text-red-500 text-xs mt-1">{errors.guidelines}</p>}
                   </div>
                   <Button onClick={handleSubmit} className="w-full" disabled={saving}>
                     {saving ? 'Saving...' : (editingId ? 'Update' : 'Create')} Exercise

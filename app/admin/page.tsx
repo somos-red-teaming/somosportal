@@ -7,7 +7,7 @@ import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import { Users, FileText, Flag, Activity, Bot, Code, TestTube } from 'lucide-react'
+import { Users, FileText, Flag, Activity, Bot, Code, TestTube, Download } from 'lucide-react'
 
 interface Stats {
   users: number
@@ -117,6 +117,33 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
+                  <Flag className="h-5 w-5" />
+                  Flag Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">Review and manage flagged AI responses.</p>
+                <Button asChild><Link href="/admin/flags">Manage Flags</Link></Button>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="mt-6 grid gap-6 md:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Download className="h-5 w-5" />
+                  Data Export
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">Export flags, interactions, and exercises data.</p>
+                <Button asChild><Link href="/admin/export">Export Data</Link></Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <TestTube className="h-5 w-5" />
                   API Tester
                 </CardTitle>
@@ -126,9 +153,6 @@ export default function AdminDashboard() {
                 <Button asChild><Link href="/api-tester">Test APIs</Link></Button>
               </CardContent>
             </Card>
-          </div>
-          
-          <div className="mt-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -138,7 +162,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-4">Complete API documentation with Swagger UI.</p>
-                <Button variant="outline" asChild><Link href="/api-docs">View API Docs</Link></Button>
+                <Button className="bg-green-600 hover:bg-green-700" asChild><Link href="/api-docs">View API Docs</Link></Button>
               </CardContent>
             </Card>
           </div>

@@ -2,7 +2,8 @@ import { AIProvider, AIResponse, AIImageResponse, GenerateTextOptions, GenerateI
 
 /**
  * Custom AI Provider
- * Handles integration with custom AI endpoints and APIs
+ * Supports multiple custom models via database configuration
+ * API keys stored securely in env vars, referenced by name in DB
  */
 export class CustomProvider implements AIProvider {
   name = 'Custom'
@@ -11,22 +12,32 @@ export class CustomProvider implements AIProvider {
   private apiKey?: string
   private endpoint: string
   private headers: Record<string, string>
+  private modelId: string
 
-  constructor() {
-    const endpoint = process.env.CUSTOM_ENDPOINT
-    if (!endpoint) {
-      throw new AIProviderError('CUSTOM_ENDPOINT environment variable not set', 'custom')
+  /**
+   * Create a custom provider instance
+   * @param config - Configuration from database (endpoint, apiKeyEnv)
+   */
+  constructor(config?: { endpoint?: string; apiKeyEnv?: string; modelId?: string }) {
+    this.endpoint = config?.endpoint || process.env.CUSTOM_ENDPOINT || ''
+    this.modelId = config?.modelId || 'default'
+    
+    if (!this.endpoint) {
+      throw new AIProviderError('Custom endpoint not configured', 'custom')
     }
     
-    this.endpoint = endpoint
-    this.apiKey = process.env.CUSTOM_API_KEY
-    
-    const customHeaders = process.env.CUSTOM_HEADERS
-    const parsedHeaders = customHeaders ? JSON.parse(customHeaders) : {}
+    // Get API key from env var name stored in DB
+    if (config?.apiKeyEnv) {
+      this.apiKey = process.env[config.apiKeyEnv]
+      if (!this.apiKey) {
+        throw new AIProviderError(`Environment variable ${config.apiKeyEnv} not set`, 'custom')
+      }
+    } else {
+      this.apiKey = process.env.CUSTOM_API_KEY
+    }
     
     this.headers = {
       'Content-Type': 'application/json',
-      ...parsedHeaders,
       ...(this.apiKey ? { 'Authorization': `Bearer ${this.apiKey}` } : {})
     }
   }
@@ -141,28 +152,24 @@ export class CustomProvider implements AIProvider {
     }
   }
 
+  /**
+   * Test connection to custom API endpoint
+   * Uses the configured model ID for the test request
+   */
   async testConnection(): Promise<boolean> {
     try {
-      // Try a simple health check or minimal request
-      const response = await fetch(`${this.endpoint}/health`, {
-        method: 'GET',
-        headers: this.headers,
-      })
-      
-      if (response.ok) return true
-      
-      // If no health endpoint, try a minimal chat request
-      const chatResponse = await fetch(`${this.endpoint}/chat/completions`, {
+      // Try a minimal chat request with the actual model ID
+      const response = await fetch(`${this.endpoint}/chat/completions`, {
         method: 'POST',
         headers: this.headers,
         body: JSON.stringify({
-          model: 'default',
+          model: this.modelId,
           messages: [{ role: 'user', content: 'test' }],
           max_tokens: 1,
         }),
       })
       
-      return chatResponse.ok
+      return response.ok
     } catch {
       return false
     }

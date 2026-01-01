@@ -60,6 +60,7 @@ export interface AIProvider {
 /**
  * Factory class for creating AI provider instances
  * Handles provider selection and configuration
+ * Custom providers receive endpoint and apiKeyEnv from database
  */
 export class AIProviderFactory {
   static createProvider(config: AIModelConfig): AIProvider {
@@ -68,12 +69,39 @@ export class AIProviderFactory {
       case 'groq': return new GroqProvider()
       case 'openai': return new OpenAIProvider()
       case 'anthropic': return new AnthropicProvider()
-      case 'custom': return new CustomProvider()
+      case 'custom': return new CustomProvider({
+        endpoint: config.configuration?.endpoint,
+        apiKeyEnv: config.configuration?.apiKeyEnv,
+        modelId: config.model_id
+      })
       default: throw new Error(`Unsupported provider: ${config.provider}`)
     }
   }
 }
 ```
+
+## 🔧 Custom Model Configuration
+
+### **Adding Custom Models**
+Custom models are configured via Admin UI with secure API key handling:
+
+1. **API Key** - Stored in environment variable (e.g., `MY_API_KEY=sk-xxx`)
+2. **Endpoint URL** - Stored in database `configuration` column
+3. **Env Var Name** - Referenced in database, actual key fetched at runtime
+
+```json
+// Database configuration column for custom models
+{
+  "endpoint": "https://your-api.com/v1",
+  "apiKeyEnv": "MY_API_KEY"
+}
+```
+
+### **Security Model**
+- ✅ API keys never stored in database
+- ✅ Only env var names referenced in DB
+- ✅ Keys fetched from environment at runtime
+- ✅ Works with any OpenAI-compatible API
 
 ## 🎭 Blind Testing Architecture
 

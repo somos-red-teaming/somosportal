@@ -23,6 +23,8 @@ interface AIModel {
   model_id: string
   description: string
   capabilities: string[]
+  configuration: Record<string, string>
+  credit_cost: number
   is_active: boolean
   is_public: boolean
   created_at: string
@@ -35,9 +37,10 @@ const emptyModel = {
   model_id: '',
   description: '',
   capabilities: [] as string[],
-  configuration: {},
+  configuration: {} as Record<string, string>,
+  credit_cost: 0,
   is_active: true,
-  is_public: true // Always true, controlled by exercise assignment
+  is_public: true
 }
 
 const providerOptions = [
@@ -83,10 +86,16 @@ export default function AdminModelsPage() {
     setLoading(false)
   }
 
+  /**
+   * Save model to database
+   * Includes configuration for custom providers (endpoint, apiKeyEnv)
+   */
   const handleSave = async () => {
     const modelData = {
       ...form,
-      capabilities: form.capabilities.length > 0 ? form.capabilities : ['text_generation']
+      capabilities: form.capabilities.length > 0 ? form.capabilities : ['text_generation'],
+      // Only include configuration for custom providers
+      configuration: form.provider === 'custom' ? form.configuration : {}
     }
 
     if (editingId) {
@@ -101,6 +110,10 @@ export default function AdminModelsPage() {
     fetchModels()
   }
 
+  /**
+   * Load model data into form for editing
+   * Includes configuration for custom provider settings
+   */
   const handleEdit = (model: AIModel) => {
     setForm({
       name: model.name,
@@ -109,9 +122,10 @@ export default function AdminModelsPage() {
       model_id: model.model_id,
       description: model.description || '',
       capabilities: model.capabilities || [],
-      configuration: {},
+      configuration: model.configuration || {},
+      credit_cost: model.credit_cost || 0,
       is_active: model.is_active,
-      is_public: true // Always true, controlled by exercise assignment
+      is_public: true
     })
     setEditingId(model.id)
     setDialogOpen(true)
@@ -225,6 +239,19 @@ export default function AdminModelsPage() {
                       />
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Credit Cost per Message</Label>
+                      <Input 
+                        type="number"
+                        min="0"
+                        value={form.credit_cost} 
+                        onChange={(e) => setForm({ ...form, credit_cost: parseInt(e.target.value) || 0 })}
+                        placeholder="0 = free"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">0 = free, 1+ = deducts from user credits</p>
+                    </div>
+                  </div>
                   <div>
                     <Label>Description</Label>
                     <Textarea 
@@ -233,6 +260,41 @@ export default function AdminModelsPage() {
                       placeholder="Brief description of the model"
                     />
                   </div>
+                  
+                  {/* Custom provider configuration fields */}
+                  {form.provider === 'custom' && (
+                    <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                      <Label className="text-base font-semibold">Custom Provider Settings</Label>
+                      <div>
+                        <Label>Endpoint URL *</Label>
+                        <Input 
+                          value={form.configuration.endpoint || ''} 
+                          onChange={(e) => setForm({ 
+                            ...form, 
+                            configuration: { ...form.configuration, endpoint: e.target.value }
+                          })}
+                          placeholder="https://your-api.com/v1"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Full URL to your API endpoint (must support /chat/completions)
+                        </p>
+                      </div>
+                      <div>
+                        <Label>API Key Environment Variable *</Label>
+                        <Input 
+                          value={form.configuration.apiKeyEnv || ''} 
+                          onChange={(e) => setForm({ 
+                            ...form, 
+                            configuration: { ...form.configuration, apiKeyEnv: e.target.value }
+                          })}
+                          placeholder="MY_CUSTOM_API_KEY"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Name of the env var containing the API key (must be set on server)
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <Label>Capabilities</Label>
                     <div className="grid grid-cols-2 gap-2 mt-2">
@@ -286,6 +348,7 @@ export default function AdminModelsPage() {
                         </CardTitle>
                         <CardDescription>
                           {model.display_name} • {model.provider} • {model.model_id}
+                          {model.credit_cost > 0 && <span className="ml-2 text-amber-600">• {model.credit_cost} credit/msg</span>}
                         </CardDescription>
                       </div>
                       <div className="flex gap-2">
@@ -320,6 +383,15 @@ export default function AdminModelsPage() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-muted-foreground mb-2">{model.description}</p>
+                    {/* Show custom provider config info */}
+                    {model.provider === 'custom' && model.configuration?.endpoint && (
+                      <div className="mb-2 p-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded text-sm">
+                        <span className="font-medium">Endpoint:</span> {model.configuration.endpoint}
+                        {model.configuration.apiKeyEnv && (
+                          <span className="ml-3"><span className="font-medium">Key:</span> ${model.configuration.apiKeyEnv}</span>
+                        )}
+                      </div>
+                    )}
                     {testErrors[model.id] && (
                       <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded text-sm text-red-700">
                         <strong>Test Error:</strong> {testErrors[model.id]}
