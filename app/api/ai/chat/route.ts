@@ -3,13 +3,16 @@ import { AIProviderFactory } from '@/lib/ai-providers/factory'
 import { supabase } from '@/lib/supabase'
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin()
     const { exerciseId, modelId, prompt, conversationId, history, userId } = await request.json()
 
     // Validate required fields
