@@ -86,6 +86,8 @@ export default function AdminFlagsPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [categoryFilter, setCategoryFilter] = useState<string>('')
+  const [exerciseFilter, setExerciseFilter] = useState<string>('')
+  const [exercises, setExercises] = useState<{ id: string; title: string }[]>([])
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [selectedFlag, setSelectedFlag] = useState<FlagData | null>(null)
@@ -93,11 +95,17 @@ export default function AdminFlagsPage() {
 
   useEffect(() => {
     fetchStats()
+    fetchExercises()
   }, [])
 
   useEffect(() => {
     fetchFlags()
-  }, [page, search, statusFilter, categoryFilter])
+  }, [page, search, statusFilter, categoryFilter, exerciseFilter])
+
+  const fetchExercises = async () => {
+    const { data } = await supabase.from('exercises').select('id, title').order('title')
+    setExercises(data || [])
+  }
 
   const fetchStats = async () => {
     // Fetch flags with model info via admin API
@@ -166,6 +174,7 @@ export default function AdminFlagsPage() {
     if (search) params.set('search', search)
     if (statusFilter) params.set('status', statusFilter)
     if (categoryFilter) params.set('category', categoryFilter)
+    if (exerciseFilter) params.set('exercise_id', exerciseFilter)
 
     const res = await fetch(`/api/flags/admin?${params}`)
     const { flags: data, total: count } = await res.json()
@@ -358,6 +367,10 @@ export default function AdminFlagsPage() {
                 <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setPage(1) }} className="border rounded-md px-3 py-2 bg-background">
                   <option value="">All Categories</option>
                   {Object.entries(categoryLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+                <select value={exerciseFilter} onChange={(e) => { setExerciseFilter(e.target.value); setPage(1) }} className="border rounded-md px-3 py-2 bg-background">
+                  <option value="">All Exercises</option>
+                  {exercises.map(ex => <option key={ex.id} value={ex.id}>{ex.title}</option>)}
                 </select>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => exportFlags('csv')}><Download className="h-4 w-4 mr-1" />CSV</Button>

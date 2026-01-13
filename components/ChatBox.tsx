@@ -466,10 +466,11 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
               <Button
                 size="sm"
                 variant="outline"
-                className="h-6 w-6 sm:h-8 sm:w-8 p-0 flex-shrink-0"
+                className="h-8 px-2 sm:px-3 flex-shrink-0 gap-1 cursor-pointer text-emerald-600 border-emerald-600 hover:bg-emerald-50"
                 title={`Flag issue with ${modelName}`}
               >
                 <Flag className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs">Report</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">

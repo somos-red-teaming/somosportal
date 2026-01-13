@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get('status')
   const category = searchParams.get('category')
   const search = searchParams.get('search')
+  const exerciseId = searchParams.get('exercise_id')
   const page = parseInt(searchParams.get('page') || '1')
   const limit = parseInt(searchParams.get('limit') || '10')
 
@@ -70,5 +71,11 @@ export async function GET(request: NextRequest) {
     return { ...flag, user, interaction, model }
   }))
 
-  return NextResponse.json({ flags: flagsWithRelations, total: count })
+  // Filter by exercise if specified
+  let filteredFlags = flagsWithRelations
+  if (exerciseId) {
+    filteredFlags = flagsWithRelations.filter(f => f.interaction?.exercise?.id === exerciseId)
+  }
+
+  return NextResponse.json({ flags: filteredFlags, total: exerciseId ? filteredFlags.length : count })
 }
