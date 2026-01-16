@@ -12,7 +12,7 @@ import { HuggingFaceProvider } from './huggingface'
 export interface AIModelConfig {
   id: string
   name: string
-  provider: 'openai' | 'anthropic' | 'google' | 'custom' | 'groq'
+  provider: 'openai' | 'anthropic' | 'google' | 'custom' | 'groq' | 'huggingface'
   model_id: string
   configuration: Record<string, any>
 }
