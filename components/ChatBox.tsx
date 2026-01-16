@@ -97,6 +97,9 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
   const [isSubmittingFlag, setIsSubmittingFlag] = useState(false)
   const [flagDialogOpen, setFlagDialogOpen] = useState(false)
 
+  // Image viewer state
+  const [viewerImage, setViewerImage] = useState<string | null>(null)
+
   /**
    * Auto-scroll to bottom when new messages arrive - contained within chatbox
    */
@@ -629,12 +632,12 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
                               alt="Generated image"
                               className="max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer"
                               style={{ maxHeight: '300px' }}
-                              onClick={() => window.open(message.imageUrl, '_blank')}
+                              onClick={() => setViewerImage(message.imageUrl!)}
                               title="Click to view full size"
                             />
                             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <button
-                                onClick={() => window.open(message.imageUrl, '_blank')}
+                                onClick={() => setViewerImage(message.imageUrl!)}
                                 className="p-1.5 bg-black/50 hover:bg-black/70 rounded text-white text-xs"
                                 title="Open full size"
                               >
@@ -754,6 +757,41 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
           </Button>
         </div>
       </div>
+
+      {/* Image Viewer Modal */}
+      {viewerImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setViewerImage(null)}
+        >
+          <div className="relative max-w-full max-h-full">
+            <img 
+              src={viewerImage} 
+              alt="Full size" 
+              className="max-w-full max-h-[90vh] object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className="absolute top-2 right-2 flex gap-2">
+              <a
+                href={viewerImage}
+                download={`image-${Date.now()}.png`}
+                className="p-2 bg-white/90 hover:bg-white rounded-full text-black"
+                onClick={(e) => e.stopPropagation()}
+                title="Download"
+              >
+                ⬇️
+              </a>
+              <button
+                onClick={() => setViewerImage(null)}
+                className="p-2 bg-white/90 hover:bg-white rounded-full text-black"
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
