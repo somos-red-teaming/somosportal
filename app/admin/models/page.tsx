@@ -48,6 +48,7 @@ const providerOptions = [
   { value: 'anthropic', label: 'Anthropic' },
   { value: 'google', label: 'Google' },
   { value: 'groq', label: 'Groq' },
+  { value: 'huggingface', label: 'Hugging Face' },
   { value: 'custom', label: 'Custom' }
 ]
 

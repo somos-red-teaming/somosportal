@@ -623,13 +623,32 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
                         </div>
                         {/* Display image if present */}
                         {message.imageUrl && (
-                          <div className="mt-2">
+                          <div className="mt-2 relative group">
                             <img 
                               src={message.imageUrl} 
                               alt="Generated image"
-                              className="max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600"
+                              className="max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer"
                               style={{ maxHeight: '300px' }}
+                              onClick={() => window.open(message.imageUrl, '_blank')}
+                              title="Click to view full size"
                             />
+                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => window.open(message.imageUrl, '_blank')}
+                                className="p-1.5 bg-black/50 hover:bg-black/70 rounded text-white text-xs"
+                                title="Open full size"
+                              >
+                                🔍
+                              </button>
+                              <a
+                                href={message.imageUrl}
+                                download={`image-${Date.now()}.png`}
+                                className="p-1.5 bg-black/50 hover:bg-black/70 rounded text-white text-xs"
+                                title="Download"
+                              >
+                                ⬇️
+                              </a>
+                            </div>
                           </div>
                         )}
                       </>

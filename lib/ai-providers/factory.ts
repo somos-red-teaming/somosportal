@@ -4,6 +4,7 @@ import { AnthropicProvider } from './anthropic'
 import { GoogleProvider } from './google'
 import { CustomProvider } from './custom'
 import { GroqProvider } from './groq'
+import { HuggingFaceProvider } from './huggingface'
 
 /**
  * Configuration interface for AI models
@@ -46,6 +47,9 @@ export class AIProviderFactory {
       
       case 'groq':
         return new GroqProvider()
+      
+      case 'huggingface':
+        return new HuggingFaceProvider()
       
       default:
         throw new Error(`Unsupported provider: ${config.provider}`)
