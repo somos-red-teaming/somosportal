@@ -4,7 +4,7 @@
  */
 export interface AIProvider {
   name: string
-  type: 'openai' | 'anthropic' | 'google' | 'custom' | 'groq'
+  type: 'openai' | 'anthropic' | 'google' | 'custom' | 'groq' | 'huggingface'
   
   // Text generation
   generateText(prompt: string, options?: GenerateTextOptions): Promise<AIResponse>

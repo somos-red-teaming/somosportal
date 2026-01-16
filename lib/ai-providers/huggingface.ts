@@ -4,6 +4,8 @@ import { AIProvider, AIResponse } from './base'
  * Hugging Face provider for image generation models
  */
 export class HuggingFaceProvider implements AIProvider {
+  name = 'HuggingFace'
+  type: 'huggingface' = 'huggingface'
   private apiKey: string
 
   constructor() {
