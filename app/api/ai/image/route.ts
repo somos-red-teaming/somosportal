@@ -49,6 +49,10 @@ export async function POST(request: NextRequest) {
       return await generateGoogleImage(prompt, blindName)
     } else if (model.provider === 'openai') {
       return await generateDallEImage(prompt, blindName)
+    } else if (model.provider === 'dashscope') {
+      return await generateDashScopeImage(prompt, blindName)
+    } else if (model.provider === 'huggingface') {
+      return await generateHuggingFaceImage(prompt, blindName, model.model_id)
     } else {
       // Model doesn't support image generation
       return NextResponse.json({
@@ -219,6 +223,169 @@ async function generateDallEImage(prompt: string, blindName: string) {
       imageUrl: 'https://via.placeholder.com/512x512/EF4444/FFFFFF?text=DALL-E+Error',
       model: blindName,
       provider: 'dall-e-3',
+      prompt: prompt,
+      metadata: { error: error instanceof Error ? error.message : String(error) }
+    })
+  }
+}
+
+
+/**
+ * Generate image using DashScope Z-Image-Turbo (Alibaba Cloud)
+ */
+async function generateDashScopeImage(prompt: string, blindName: string) {
+  const apiKey = process.env.DASHSCOPE_API_KEY
+
+  if (!apiKey) {
+    return NextResponse.json({
+      id: `img_${Date.now()}`,
+      imageUrl: 'https://via.placeholder.com/512x512/4F46E5/FFFFFF?text=DashScope+API+Key+Missing',
+      model: blindName,
+      provider: 'dashscope',
+      prompt: prompt,
+      metadata: { error: 'API key not configured' }
+    })
+  }
+
+  try {
+    // Use Singapore international endpoint
+    const response = await fetch('https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'z-image-turbo',
+        input: {
+          messages: [{
+            role: 'user',
+            content: [{ text: prompt }]
+          }]
+        },
+        parameters: {
+          size: '1024*1024',
+          prompt_extend: false
+        }
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok || data.code) {
+      console.error('DashScope API error:', data)
+      return NextResponse.json({
+        id: `img_${Date.now()}`,
+        imageUrl: 'https://via.placeholder.com/512x512/EF4444/FFFFFF?text=Z-Image+Failed',
+        model: blindName,
+        provider: 'dashscope',
+        prompt: prompt,
+        metadata: { error: data.message || 'Generation failed' }
+      })
+    }
+
+    const imageUrl = data.output?.choices?.[0]?.message?.content?.find((c: { image?: string }) => c.image)?.image
+
+    if (!imageUrl) {
+      return NextResponse.json({
+        id: `img_${Date.now()}`,
+        imageUrl: 'https://via.placeholder.com/512x512/EF4444/FFFFFF?text=No+Image+Returned',
+        model: blindName,
+        provider: 'dashscope',
+        prompt: prompt,
+        metadata: { error: 'No image URL in response' }
+      })
+    }
+
+    return NextResponse.json({
+      id: `img_${Date.now()}`,
+      imageUrl: imageUrl,
+      model: blindName,
+      provider: 'dashscope',
+      prompt: prompt,
+      metadata: {
+        size: '1024x1024',
+        timestamp: new Date().toISOString()
+      }
+    })
+
+  } catch (error) {
+    console.error('DashScope generation error:', error)
+    return NextResponse.json({
+      id: `img_${Date.now()}`,
+      imageUrl: 'https://via.placeholder.com/512x512/EF4444/FFFFFF?text=Z-Image+Error',
+      model: blindName,
+      provider: 'dashscope',
+      prompt: prompt,
+      metadata: { error: error instanceof Error ? error.message : String(error) }
+    })
+  }
+}
+
+
+/**
+ * Generate image using Hugging Face Inference API (FLUX, Stable Diffusion, etc.)
+ */
+async function generateHuggingFaceImage(prompt: string, blindName: string, modelId: string = 'black-forest-labs/FLUX.1-schnell') {
+  const apiKey = process.env.HUGGINGFACE_API_KEY
+
+  if (!apiKey) {
+    return NextResponse.json({
+      id: `img_${Date.now()}`,
+      imageUrl: 'https://via.placeholder.com/512x512/4F46E5/FFFFFF?text=HuggingFace+API+Key+Missing',
+      model: blindName,
+      provider: 'huggingface',
+      prompt: prompt,
+      metadata: { error: 'API key not configured' }
+    })
+  }
+
+  try {
+    const response = await fetch(`https://router.huggingface.co/hf-inference/models/${modelId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ inputs: prompt }),
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      console.error('HuggingFace API error:', error)
+      return NextResponse.json({
+        id: `img_${Date.now()}`,
+        imageUrl: 'https://via.placeholder.com/512x512/EF4444/FFFFFF?text=HuggingFace+Failed',
+        model: blindName,
+        provider: 'huggingface',
+        prompt: prompt,
+        metadata: { error: error || 'Generation failed' }
+      })
+    }
+
+    // Response is raw image bytes
+    const imageBuffer = await response.arrayBuffer()
+    const base64 = Buffer.from(imageBuffer).toString('base64')
+
+    return NextResponse.json({
+      id: `img_${Date.now()}`,
+      imageUrl: `data:image/png;base64,${base64}`,
+      model: blindName,
+      provider: 'huggingface',
+      prompt: prompt,
+      metadata: {
+        modelId: modelId,
+        timestamp: new Date().toISOString()
+      }
+    })
+
+  } catch (error) {
+    console.error('HuggingFace generation error:', error)
+    return NextResponse.json({
+      id: `img_${Date.now()}`,
+      imageUrl: 'https://via.placeholder.com/512x512/EF4444/FFFFFF?text=HuggingFace+Error',
+      model: blindName,
+      provider: 'huggingface',
       prompt: prompt,
       metadata: { error: error instanceof Error ? error.message : String(error) }
     })
