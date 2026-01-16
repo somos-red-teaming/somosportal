@@ -16,8 +16,7 @@ export class HuggingFaceProvider implements AIProvider {
     // HuggingFace models in SOMOS are image-only
     return {
       content: 'This model only supports image generation.',
-      model: 'huggingface',
-      usage: { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+      model: 'huggingface'
     }
   }
 
