@@ -252,7 +252,10 @@ async function generateHuggingFaceImage(prompt: string, blindName: string, model
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ inputs: prompt }),
+      body: JSON.stringify({ 
+        inputs: prompt,
+        parameters: { seed: Math.floor(Math.random() * 2147483647) }
+      }),
     })
 
     if (!response.ok) {
