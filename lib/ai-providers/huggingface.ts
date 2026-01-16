@@ -15,8 +15,10 @@ export class HuggingFaceProvider implements AIProvider {
   async generateText(prompt: string): Promise<AIResponse> {
     // HuggingFace models in SOMOS are image-only
     return {
+      id: `hf_${Date.now()}`,
       content: 'This model only supports image generation.',
-      model: 'huggingface'
+      model: 'huggingface',
+      provider: 'huggingface'
     }
   }
 
