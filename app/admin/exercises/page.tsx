@@ -30,6 +30,8 @@ interface Exercise {
   target_models: string[] | null
   flag_package_id: string | null
   visibility: string
+  icon: string | null
+  color: string | null
   created_at: string
   participant_count?: number
 }
@@ -140,7 +142,10 @@ export default function AdminExercisesPage() {
       .from('exercise_invites')
       .select('id, user_id, status, user:users(email, full_name)')
       .eq('exercise_id', exerciseId)
-    setInvites(data || [])
+    setInvites((data || []).map(d => ({
+      ...d,
+      user: Array.isArray(d.user) ? d.user[0] : d.user
+    })))
   }
 
   const openInviteDialog = async (ex: Exercise) => {

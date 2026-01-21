@@ -19,6 +19,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start typing.
       tinymceScriptSrc="/tinymce/tinymce.min.js"
       value={content}
       onEditorChange={onChange}
+      licenseKey="gpl"
       init={{
         height: 200,
         menubar: false,
@@ -29,7 +30,6 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start typing.
         branding: false,
         statusbar: false,
         promotion: false,
-        license_key: 'gpl',
       }}
     />
   )

@@ -100,9 +100,12 @@ export default function AdminConversationsPage() {
       overrideMap[`${o.exercise_id}-${o.model_id}`] = o.temperature_override
     })
     
-    // Add override to each interaction
+    // Add override to each interaction, flatten array relations
     const dataWithOverrides = (data || []).map(i => ({
       ...i,
+      user: Array.isArray(i.user) ? i.user[0] || null : i.user,
+      model: Array.isArray(i.model) ? i.model[0] || null : i.model,
+      exercise: Array.isArray(i.exercise) ? i.exercise[0] || null : i.exercise,
       temperature_override: overrideMap[`${i.exercise_id}-${i.model_id}`] ?? null
     }))
     

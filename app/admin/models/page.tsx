@@ -74,7 +74,7 @@ export default function AdminModelsPage() {
   const [testing, setTesting] = useState<string | null>(null)
   const [testResults, setTestResults] = useState<Record<string, boolean>>({})
   const [testErrors, setTestErrors] = useState<Record<string, string>>({})
-  const [availableModels, setAvailableModels] = useState<{ id: string; name: string; context_window?: number }[]>([])
+  const [availableModels, setAvailableModels] = useState<{ id: string; name: string; context_window?: number; pipeline_tag?: string; downloads?: number }[]>([])
   const [loadingModels, setLoadingModels] = useState(false)
 
   useEffect(() => {

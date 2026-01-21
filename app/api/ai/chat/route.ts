@@ -109,6 +109,7 @@ export async function POST(request: NextRequest) {
     // Save interaction to database
     const sessionId = conversationId || crypto.randomUUID()
     try {
+      const tokenCount = (response.tokens as any)?.total ?? response.tokens ?? null
       const { error: insertError } = await supabaseAdmin.from('interactions').insert({
         user_id: userId || null,
         exercise_id: exerciseId,
@@ -116,7 +117,7 @@ export async function POST(request: NextRequest) {
         session_id: sessionId,
         prompt: prompt,
         response: response.content,
-        token_count: response.tokens?.total || null,
+        token_count: tokenCount,
         metadata: {
           provider: response.provider,
           model: response.model,

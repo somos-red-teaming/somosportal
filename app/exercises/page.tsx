@@ -115,7 +115,8 @@ export default function ExercisesPage() {
           .in('exercise_id', teamExerciseIds)
         exerciseTeams?.forEach(et => {
           if (!teamNames[et.exercise_id]) teamNames[et.exercise_id] = []
-          if (et.team?.name) teamNames[et.exercise_id].push(et.team.name)
+          const team = Array.isArray(et.team) ? et.team[0] : et.team
+          if (team?.name) teamNames[et.exercise_id].push(team.name)
         })
       }
 
