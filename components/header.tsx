@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Moon, Sun, User, LogOut, Settings, Shield, Coins } from 'lucide-react'
+import { Moon, Sun, User, LogOut, Settings, Shield, Coins, Bell } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRole } from '@/hooks/useRole'
@@ -19,6 +19,7 @@ import { supabase } from '@/lib/supabase'
 export function Header() {
   const [isDark, setIsDark] = useState(false)
   const [credits, setCredits] = useState<number | null>(null)
+  const [pendingInvites, setPendingInvites] = useState(0)
   const { user, signOut, loading } = useAuth()
   const { isAdmin } = useRole()
   const router = useRouter()
@@ -41,6 +42,30 @@ export function Header() {
       .eq('auth_user_id', user.id)
       .single()
       .then(({ data }) => setCredits(data?.credits ?? null))
+  }, [user])
+
+  // Fetch pending invites count
+  useEffect(() => {
+    if (!user) return setPendingInvites(0)
+    
+    const fetchInvites = async () => {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_user_id', user.id)
+        .single()
+      
+      if (userData) {
+        const { count } = await supabase
+          .from('exercise_invites')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userData.id)
+          .eq('status', 'pending')
+        
+        setPendingInvites(count || 0)
+      }
+    }
+    fetchInvites()
   }, [user])
 
   // Listen for credit updates from chat
@@ -73,8 +98,13 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
-          <Link href="/exercises" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/exercises" className="relative text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             Exercises
+            {pendingInvites > 0 && (
+              <span className="absolute -top-2 -right-4 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                {pendingInvites}
+              </span>
+            )}
           </Link>
           {isAdmin && (
             <Link href="/admin" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">

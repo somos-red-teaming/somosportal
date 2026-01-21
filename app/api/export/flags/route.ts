@@ -13,13 +13,17 @@ export async function GET(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Fetch models for lookup
-  const { data: models } = await supabase.from('ai_models').select('id, name')
-  const modelMap = new Map(models?.map(m => [m.id, m.name]) || [])
+  // Fetch models for lookup (including temperature)
+  const { data: models } = await supabase.from('ai_models').select('id, name, temperature')
+  const modelMap = new Map(models?.map(m => [m.id, { name: m.name, temperature: m.temperature }]) || [])
 
   // Fetch exercises for lookup
   const { data: exercises } = await supabase.from('exercises').select('id, title')
   const exerciseMap = new Map(exercises?.map(e => [e.id, e.title]) || [])
+
+  // Fetch temperature overrides
+  const { data: overrides } = await supabase.from('exercise_models').select('exercise_id, model_id, temperature_override')
+  const overrideMap = new Map(overrides?.map(o => [`${o.exercise_id}-${o.model_id}`, o.temperature_override]) || [])
 
   // Build query
   let query = supabase.from('flags').select('*, user:user_id(email), interaction:interaction_id(exercise_id, model_id)')
@@ -35,22 +39,30 @@ export async function GET(request: NextRequest) {
   }
 
   // Transform data
-  const exportData = filtered.map(f => ({
-    id: f.id,
-    categories: f.evidence?.categories || [f.category],
-    severity: f.severity,
-    status: f.status,
-    description: f.description,
-    exercise: exerciseMap.get(f.interaction?.exercise_id) || '',
-    model: modelMap.get(f.interaction?.model_id) || f.evidence?.modelId || '',
-    submitted_by: f.user?.email || '',
-    created_at: f.created_at,
-    reviewed_at: f.reviewed_at,
-    reviewer_notes: f.reviewer_notes,
-  }))
+  const exportData = filtered.map(f => {
+    const modelId = f.interaction?.model_id
+    const exerciseIdVal = f.interaction?.exercise_id
+    const modelTemp = modelMap.get(modelId)?.temperature ?? 0.7
+    const exerciseTemp = overrideMap.get(`${exerciseIdVal}-${modelId}`)
+    return {
+      id: f.id,
+      categories: f.evidence?.categories || [f.category],
+      severity: f.severity,
+      status: f.status,
+      description: f.description,
+      exercise: exerciseMap.get(exerciseIdVal) || '',
+      model: modelMap.get(modelId)?.name || f.evidence?.modelId || '',
+      default_temp: modelTemp,
+      exercise_temp: exerciseTemp ?? '',
+      submitted_by: f.user?.email || '',
+      created_at: f.created_at?.split('T')[0] || '',
+      reviewed_at: f.reviewed_at?.split('T')[0] || '',
+      reviewer_notes: f.reviewer_notes,
+    }
+  })
 
   if (format === 'csv') {
-    const headers = ['ID', 'Categories', 'Severity', 'Status', 'Description', 'Exercise', 'Model', 'Submitted By', 'Created', 'Reviewed', 'Notes']
+    const headers = ['ID', 'Categories', 'Severity', 'Status', 'Description', 'Exercise', 'Model', 'Default Temp', 'Exercise Temp', 'Submitted By', 'Created', 'Reviewed', 'Notes']
     const rows = exportData.map(f => [
       f.id,
       f.categories.join('; '),
@@ -59,6 +71,8 @@ export async function GET(request: NextRequest) {
       `"${(f.description || '').replace(/"/g, '""')}"`,
       f.exercise,
       f.model,
+      f.default_temp,
+      f.exercise_temp,
       f.submitted_by,
       f.created_at,
       f.reviewed_at || '',

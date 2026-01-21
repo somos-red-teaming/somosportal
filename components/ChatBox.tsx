@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Slider } from '@/components/ui/slider'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Send, User, Bot, Copy, Image, Flag } from 'lucide-react'
+import { Send, User, Bot, Copy, Image, Flag, Settings2, X } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -29,7 +30,7 @@ interface ChatBoxProps {
   onCreditsUpdate?: (credits: number) => void
 }
 
-const flagCategoryOptions = [
+const defaultFlagCategories = [
   { value: 'harmful_content', label: 'Harmful Content' },
   { value: 'misinformation', label: 'Misinformation' },
   { value: 'bias_discrimination', label: 'Bias & Discrimination' },
@@ -39,39 +40,6 @@ const flagCategoryOptions = [
   { value: 'off_topic', label: 'Off Topic' },
   { value: 'spam', label: 'Spam' },
   { value: 'other', label: 'Other' }
-]
-
-const flagTemplates = [
-  { 
-    name: 'Harmful Content', 
-    categories: ['harmful_content'], 
-    severity: 8, 
-    comment: 'AI generated potentially harmful content including: ' 
-  },
-  { 
-    name: 'Factual Error', 
-    categories: ['factual_error'], 
-    severity: 5, 
-    comment: 'AI provided incorrect information about: ' 
-  },
-  { 
-    name: 'Bias Detected', 
-    categories: ['bias_discrimination'], 
-    severity: 7, 
-    comment: 'Response shows bias toward: ' 
-  },
-  { 
-    name: 'Misinformation', 
-    categories: ['misinformation'], 
-    severity: 8, 
-    comment: 'AI spread false information regarding: ' 
-  },
-  { 
-    name: 'Privacy Issue', 
-    categories: ['privacy_violation'], 
-    severity: 9, 
-    comment: 'AI disclosed or requested sensitive information: ' 
-  },
 ]
 
 /**
@@ -89,6 +57,15 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  
+  // Session ID for grouping conversation
+  const [sessionId] = useState(() => crypto.randomUUID())
+
+  // Tool mode state (for image generation)
+  const [imageMode, setImageMode] = useState(false)
+
+  // Flag categories (loaded from exercise package or default)
+  const [flagCategoryOptions, setFlagCategoryOptions] = useState(defaultFlagCategories)
 
   // Flagging state
   const [flagCategories, setFlagCategories] = useState<string[]>([]) // Changed to array for multiple selection
@@ -99,6 +76,24 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
 
   // Image viewer state
   const [viewerImage, setViewerImage] = useState<string | null>(null)
+
+  // Load flag categories for this exercise
+  useEffect(() => {
+    const loadFlagCategories = async () => {
+      const { data: exercise } = await import('@/lib/supabase').then(m => 
+        m.supabase.from('exercises').select('flag_package_id').eq('id', exerciseId).single()
+      )
+      if (exercise?.flag_package_id) {
+        const { data: categories } = await import('@/lib/supabase').then(m =>
+          m.supabase.from('flag_categories').select('value, label').eq('package_id', exercise.flag_package_id).order('sort_order')
+        )
+        if (categories?.length) {
+          setFlagCategoryOptions(categories)
+        }
+      }
+    }
+    loadFlagCategories()
+  }, [exerciseId])
 
   /**
    * Auto-scroll to bottom when new messages arrive - contained within chatbox
@@ -286,6 +281,7 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
           modelId,
           prompt: userMessage.content,
           userId,
+          conversationId: sessionId,
           history: messages.map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: m.content }))
         }),
       })
@@ -344,7 +340,11 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       e.stopPropagation()
-      handleSendMessage()
+      if (imageMode) {
+        handleGenerateImage()
+      } else {
+        handleSendMessage()
+      }
     }
   }
 
@@ -470,41 +470,20 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
                 size="sm"
                 variant="outline"
                 className="h-8 px-2 sm:px-3 flex-shrink-0 gap-1 cursor-pointer text-emerald-600 border-emerald-600 hover:bg-emerald-50"
-                title={`Flag issue with ${modelName}`}
+                title="This flags a potential harm for the exercise's findings and is shared with facilitators. This is not a formal platform report."
               >
                 <Flag className="h-3 w-3 sm:h-4 sm:w-4" />
-                <span className="text-xs">Report</span>
+                <span className="text-xs">Flag Harm</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Flag className="h-5 w-5" />
-                  Flag Issue with {modelName}
+                  Flag a Harm - {modelName}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                {/* Quick Templates */}
-                <div>
-                  <Label>Quick Templates</Label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {flagTemplates.map((t) => (
-                      <Button
-                        key={t.name}
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => {
-                          setFlagCategories(t.categories)
-                          setSeverity([t.severity])
-                          setFlagComment(t.comment)
-                        }}
-                      >
-                        {t.name}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
                 <div>
                   <Label>Categories (select multiple)</Label>
                   <ScrollArea className="h-[180px] rounded-md border p-2 mt-1">
@@ -729,25 +708,43 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
             disabled={isLoading}
             style={{ fieldSizing: 'content' } as any}
           />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="px-2 flex-shrink-0 h-8 sm:h-9 gap-1"
+              >
+                <Settings2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="text-xs hidden sm:inline">Tools</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setImageMode(!imageMode)}>
+                <Image className="h-4 w-4 mr-2" />
+                Create image
+                {imageMode && <span className="ml-2 text-primary">✓</span>}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {imageMode && (
+            <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded text-xs text-primary">
+              <Image className="h-3 w-3" />
+              <span>Image</span>
+              <button onClick={() => setImageMode(false)} className="ml-1 hover:bg-primary/20 rounded">
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
           <Button
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              handleGenerateImage()
-            }}
-            disabled={!inputMessage.trim() || isLoading}
-            size="sm"
-            variant="outline"
-            className="px-2 sm:px-3 flex-shrink-0 h-8 sm:h-9"
-            title="Generate Image"
-          >
-            <Image className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-          </Button>
-          <Button
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              handleSendMessage()
+              if (imageMode) {
+                handleGenerateImage()
+              } else {
+                handleSendMessage()
+              }
             }}
             disabled={!inputMessage.trim() || isLoading}
             size="sm"

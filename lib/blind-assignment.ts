@@ -74,9 +74,14 @@ export async function getModelConfig(exerciseId: string, blindName: string) {
  * Assign models to an exercise with automatic blind name assignment
  * @param exerciseId - The exercise ID
  * @param modelIds - Array of model IDs to assign
+ * @param temperatureOverrides - Optional map of modelId -> temperature override
  * @returns Array of assignments with blind names
  */
-export async function assignModelsToExercise(exerciseId: string, modelIds: string[]) {
+export async function assignModelsToExercise(
+  exerciseId: string, 
+  modelIds: string[], 
+  temperatureOverrides?: Record<string, number | null>
+) {
   try {
     // First, clear existing assignments for this exercise
     await supabase
@@ -84,11 +89,12 @@ export async function assignModelsToExercise(exerciseId: string, modelIds: strin
       .delete()
       .eq('exercise_id', exerciseId)
 
-    // Create new assignments with blind names
+    // Create new assignments with blind names and optional temperature overrides
     const assignments = modelIds.map((modelId, index) => ({
       exercise_id: exerciseId,
       model_id: modelId,
-      blind_name: BLIND_NAMES[index] || `Model ${index + 1}` // Fallback if we run out of names
+      blind_name: BLIND_NAMES[index] || `Model ${index + 1}`,
+      temperature_override: temperatureOverrides?.[modelId] ?? null
     }))
 
     const { data, error } = await supabase
@@ -119,6 +125,7 @@ export async function getExerciseModels(exerciseId: string) {
       .select(`
         model_id,
         blind_name,
+        temperature_override,
         ai_models (
           id,
           name,
@@ -126,7 +133,8 @@ export async function getExerciseModels(exerciseId: string) {
           provider,
           model_id,
           capabilities,
-          is_active
+          is_active,
+          temperature
         )
       `)
       .eq('exercise_id', exerciseId)

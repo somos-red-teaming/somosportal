@@ -13,8 +13,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Header } from '@/components/header'
 import { ChatBox } from '@/components/ChatBox'
 import { AlertCircle, Info, ArrowLeft, Users, Calendar, CheckCircle } from 'lucide-react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { supabase } from '@/lib/supabase'
 import { getExerciseModels } from '@/lib/blind-assignment'
 import { useAuth } from '@/hooks/useAuth'
@@ -200,10 +198,9 @@ export default function ExerciseClient() {
           <div className="flex items-start justify-between">
             <div>
               <h1 className="mb-2 text-3xl font-bold">{exercise.title}</h1>
-              <p className="text-muted-foreground">{exercise.description}</p>
+              <div className="text-muted-foreground prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: exercise.description }} />
               <div className="flex gap-2 mt-2">
                 <Badge>{exercise.category}</Badge>
-                <Badge variant="outline" className="capitalize">{exercise.difficulty_level}</Badge>
                 {participation && <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />Participating</Badge>}
               </div>
             </div>
@@ -246,11 +243,7 @@ export default function ExerciseClient() {
                 </CardHeader>
                 <CardContent>
                   <ScrollArea className="h-[500px] pr-4">
-                    <div className="prose prose-sm max-w-none dark:prose-invert">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {exercise.guidelines}
-                      </ReactMarkdown>
-                    </div>
+                    <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ __html: exercise.guidelines }} />
                   </ScrollArea>
                 </CardContent>
               </Card>
@@ -311,14 +304,11 @@ export default function ExerciseClient() {
               <p className="text-muted-foreground mb-4">You need to join this exercise to access the testing interface.</p>
               <div className="bg-muted p-4 rounded-lg text-left max-w-xl mx-auto">
                 <h3 className="font-medium mb-2">Guidelines Preview:</h3>
-                <div className="prose prose-sm max-w-none dark:prose-invert">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {exercise.guidelines.length > 300 
+                <div className="prose prose-sm max-w-none dark:prose-invert" dangerouslySetInnerHTML={{ 
+                    __html: exercise.guidelines.length > 300 
                       ? exercise.guidelines.slice(0, 300) + '...'
                       : exercise.guidelines
-                    }
-                  </ReactMarkdown>
-                </div>
+                  }} />
               </div>
             </CardContent>
           </Card>

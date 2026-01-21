@@ -5,15 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
+import { RichTextEditor } from '@/components/RichTextEditor'
 import { supabase } from '@/lib/supabase'
 import { previewBlindAssignments, assignModelsToExercise } from '@/lib/blind-assignment'
-import { ArrowLeft, Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, Users, Calendar } from 'lucide-react'
+import { ArrowLeft, Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, Users, Calendar, UserPlus, X, FileText, Shield, Brain, Eye, Lock, AlertTriangle, Zap, Target, MessageSquare, Bot, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 
 interface Exercise {
@@ -28,6 +28,8 @@ interface Exercise {
   end_date: string | null
   max_participants: number | null
   target_models: string[] | null
+  flag_package_id: string | null
+  visibility: string
   created_at: string
   participant_count?: number
 }
@@ -37,9 +39,18 @@ interface AIModel {
   name: string
   display_name: string
   provider: string
+  temperature?: number
+}
+
+interface Team {
+  id: string
+  name: string
 }
 
 const PAGE_SIZE = 10
+
+const iconOptions = ['FileText', 'Shield', 'Brain', 'Eye', 'Lock', 'AlertTriangle', 'Zap', 'Target', 'Search', 'MessageSquare', 'Bot', 'Sparkles']
+const colorOptions = ['blue', 'red', 'green', 'purple', 'orange', 'pink', 'cyan', 'yellow']
 
 const emptyExercise = {
   title: '',
@@ -52,13 +63,47 @@ const emptyExercise = {
   end_date: '',
   max_participants: '',
   target_models: [] as string[],
+  temperature_overrides: {} as Record<string, number | null>,
+  flag_package_id: '',
+  visibility: 'public',
+  assigned_teams: [] as string[],
+  icon: 'FileText',
+  color: 'blue',
+}
+
+const iconMap: Record<string, React.ComponentType<{className?: string}>> = {
+  FileText, Shield, Brain, Eye, Lock, AlertTriangle, Zap, Target, Search, MessageSquare, Bot, Sparkles
+}
+
+const colorClasses: Record<string, string> = {
+  blue: 'bg-blue-500',
+  red: 'bg-red-500',
+  green: 'bg-green-500',
+  purple: 'bg-purple-500',
+  orange: 'bg-orange-500',
+  pink: 'bg-pink-500',
+  cyan: 'bg-cyan-500',
+  yellow: 'bg-yellow-500',
+}
+
+interface FlagPackage {
+  id: string
+  name: string
 }
 
 export default function AdminExercisesPage() {
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [models, setModels] = useState<AIModel[]>([])
+  const [teams, setTeams] = useState<Team[]>([])
+  const [flagPackages, setFlagPackages] = useState<FlagPackage[]>([])
+  const [users, setUsers] = useState<{id: string, email: string, full_name: string | null}[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
+  const [inviteExercise, setInviteExercise] = useState<Exercise | null>(null)
+  const [invites, setInvites] = useState<{id: string, user_id: string, status: string, user?: {email: string, full_name: string | null}}[]>([])
+  const [inviteSearch, setInviteSearch] = useState('')
+  const [inviteUserPage, setInviteUserPage] = useState(0)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(emptyExercise)
   const [search, setSearch] = useState('')
@@ -70,7 +115,55 @@ export default function AdminExercisesPage() {
   useEffect(() => {
     fetchExercises()
     fetchModels()
+    fetchFlagPackages()
+    fetchTeams()
+    fetchUsers()
   }, [page, search])
+
+  const fetchFlagPackages = async () => {
+    const { data } = await supabase.from('flag_packages').select('id, name').order('name')
+    setFlagPackages(data || [])
+  }
+
+  const fetchTeams = async () => {
+    const { data } = await supabase.from('teams').select('id, name').order('name')
+    setTeams(data || [])
+  }
+
+  const fetchUsers = async () => {
+    const { data } = await supabase.from('users').select('id, email, full_name').order('email')
+    setUsers(data || [])
+  }
+
+  const fetchInvites = async (exerciseId: string) => {
+    const { data } = await supabase
+      .from('exercise_invites')
+      .select('id, user_id, status, user:users(email, full_name)')
+      .eq('exercise_id', exerciseId)
+    setInvites(data || [])
+  }
+
+  const openInviteDialog = async (ex: Exercise) => {
+    setInviteExercise(ex)
+    setInviteSearch('')
+    setInviteUserPage(0)
+    await fetchInvites(ex.id)
+    setInviteDialogOpen(true)
+  }
+
+  const addInvite = async (userId: string) => {
+    if (!inviteExercise) return
+    await supabase.from('exercise_invites').insert({
+      exercise_id: inviteExercise.id,
+      user_id: userId
+    })
+    fetchInvites(inviteExercise.id)
+  }
+
+  const removeInvite = async (inviteId: string) => {
+    await supabase.from('exercise_invites').delete().eq('id', inviteId)
+    if (inviteExercise) fetchInvites(inviteExercise.id)
+  }
 
   /**
    * Fetch available AI models from database
@@ -79,7 +172,7 @@ export default function AdminExercisesPage() {
   const fetchModels = async () => {
     const { data } = await supabase
       .from('ai_models')
-      .select('id, name, display_name, provider')
+      .select('id, name, display_name, provider, temperature')
       .eq('is_active', true)
       .not('name', 'ilike', '%test%') // Filter out test models
       .not('display_name', 'ilike', '%test%') // Filter out test display names
@@ -160,6 +253,10 @@ export default function AdminExercisesPage() {
       start_date: form.start_date || null,
       end_date: form.end_date || null,
       max_participants: form.max_participants ? parseInt(form.max_participants) : null,
+      flag_package_id: form.flag_package_id || null,
+      visibility: form.visibility,
+      icon: form.icon,
+      color: form.color,
     }
 
     let exerciseId = editingId
@@ -178,9 +275,19 @@ export default function AdminExercisesPage() {
       exerciseId = newExercise?.id
     }
 
-    // Assign models with blind names to junction table
+    // Assign models with blind names and temperature overrides to junction table
     if (exerciseId && form.target_models.length > 0) {
-      await assignModelsToExercise(exerciseId, form.target_models)
+      await assignModelsToExercise(exerciseId, form.target_models, form.temperature_overrides)
+    }
+
+    // Assign teams for team_only visibility
+    if (exerciseId) {
+      await supabase.from('exercise_teams').delete().eq('exercise_id', exerciseId)
+      if (form.visibility === 'team_only' && form.assigned_teams.length > 0) {
+        await supabase.from('exercise_teams').insert(
+          form.assigned_teams.map(teamId => ({ exercise_id: exerciseId, team_id: teamId }))
+        )
+      }
     }
 
     setDialogOpen(false)
@@ -190,7 +297,27 @@ export default function AdminExercisesPage() {
     fetchExercises()
   }
 
-  const handleEdit = (ex: Exercise) => {
+  const handleEdit = async (ex: Exercise) => {
+    // Fetch assigned models and temperature overrides from junction table
+    const { data: exerciseModels } = await supabase
+      .from('exercise_models')
+      .select('model_id, temperature_override')
+      .eq('exercise_id', ex.id)
+    
+    // Fetch assigned teams
+    const { data: exerciseTeams } = await supabase
+      .from('exercise_teams')
+      .select('team_id')
+      .eq('exercise_id', ex.id)
+    
+    const assignedModels = exerciseModels?.map(em => em.model_id) || []
+    const tempOverrides: Record<string, number | null> = {}
+    exerciseModels?.forEach(em => {
+      if (em.temperature_override !== null) {
+        tempOverrides[em.model_id] = em.temperature_override
+      }
+    })
+
     setForm({
       title: ex.title,
       description: ex.description,
@@ -201,7 +328,13 @@ export default function AdminExercisesPage() {
       start_date: ex.start_date?.split('T')[0] || '',
       end_date: ex.end_date?.split('T')[0] || '',
       max_participants: ex.max_participants?.toString() || '',
-      target_models: ex.target_models || [],
+      target_models: assignedModels,
+      temperature_overrides: tempOverrides,
+      flag_package_id: ex.flag_package_id || '',
+      visibility: ex.visibility || 'public',
+      assigned_teams: exerciseTeams?.map(et => et.team_id) || [],
+      icon: ex.icon || 'FileText',
+      color: ex.color || 'blue',
     })
     setEditingId(ex.id)
     setDialogOpen(true)
@@ -248,7 +381,8 @@ export default function AdminExercisesPage() {
             </div>
             <Dialog open={dialogOpen} onOpenChange={(open) => {
               setDialogOpen(open)
-              if (!open) { setEditingId(null); setForm(emptyExercise); setErrors({}) }
+              if (!open) { setEditingId(null); setForm(emptyExercise) }
+              setErrors({})
             }}>
               <DialogTrigger asChild>
                 <Button><Plus className="h-4 w-4 mr-2" />New Exercise</Button>
@@ -267,12 +401,43 @@ export default function AdminExercisesPage() {
                     />
                     {errors.title && <p className="text-red-500 text-xs mt-1">{errors.title}</p>}
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Icon</Label>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {iconOptions.map(icon => {
+                          const Icon = iconMap[icon]
+                          return (
+                            <div
+                              key={icon}
+                              onClick={() => setForm({ ...form, icon })}
+                              className={`p-2 rounded cursor-pointer border ${form.icon === icon ? 'border-primary bg-primary/10' : 'border-muted hover:bg-muted'}`}
+                            >
+                              <Icon className="h-5 w-5" />
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Color</Label>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {colorOptions.map(color => (
+                          <div
+                            key={color}
+                            onClick={() => setForm({ ...form, color })}
+                            className={`w-8 h-8 rounded cursor-pointer ${colorClasses[color]} ${form.color === color ? 'ring-2 ring-offset-2 ring-primary' : ''}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                   <div>
                     <Label>Description *</Label>
-                    <Textarea 
-                      value={form.description} 
-                      onChange={(e) => { setForm({ ...form, description: e.target.value }); setErrors(prev => ({ ...prev, description: '' })) }}
-                      className={errors.description ? 'border-red-500' : ''}
+                    <RichTextEditor 
+                      content={form.description} 
+                      onChange={(content) => { setForm({ ...form, description: content }); setErrors(prev => ({ ...prev, description: '' })) }}
+                      placeholder="Describe the exercise..."
                     />
                     {errors.description && <p className="text-red-500 text-xs mt-1">{errors.description}</p>}
                   </div>
@@ -286,17 +451,6 @@ export default function AdminExercisesPage() {
                         className={errors.category ? 'border-red-500' : ''}
                       />
                       {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category}</p>}
-                    </div>
-                    <div>
-                      <Label>Difficulty</Label>
-                      <Select value={form.difficulty_level} onValueChange={(v) => setForm({ ...form, difficulty_level: v })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="beginner">Beginner</SelectItem>
-                          <SelectItem value="intermediate">Intermediate</SelectItem>
-                          <SelectItem value="advanced">Advanced</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -327,6 +481,53 @@ export default function AdminExercisesPage() {
                       </Select>
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Visibility</Label>
+                      <Select value={form.visibility} onValueChange={(v) => setForm({ ...form, visibility: v, assigned_teams: v === 'team_only' ? form.assigned_teams : [] })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="public">Public</SelectItem>
+                          <SelectItem value="team_only">Team Only</SelectItem>
+                          <SelectItem value="invite_only">Invite Only</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {form.visibility === 'team_only' && (
+                      <div>
+                        <Label>Assign to Teams</Label>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {teams.map((t) => (
+                            <Badge
+                              key={t.id}
+                              variant={form.assigned_teams.includes(t.id) ? 'default' : 'outline'}
+                              className="cursor-pointer"
+                              onClick={() => setForm(f => ({
+                                ...f,
+                                assigned_teams: f.assigned_teams.includes(t.id)
+                                  ? f.assigned_teams.filter(id => id !== t.id)
+                                  : [...f.assigned_teams, t.id]
+                              }))}
+                            >
+                              {t.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <Label>Flag Categories Package</Label>
+                    <Select value={form.flag_package_id} onValueChange={(v) => setForm({ ...form, flag_package_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Default categories" /></SelectTrigger>
+                      <SelectContent>
+                        {flagPackages.map(pkg => (
+                          <SelectItem key={pkg.id} value={pkg.id}>{pkg.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">Categories shown when participants flag responses</p>
+                  </div>
                   {models.length > 0 && (
                     <div>
                       <Label>Target AI Models</Label>
@@ -342,40 +543,138 @@ export default function AdminExercisesPage() {
                           </Badge>
                         ))}
                       </div>
-                      
-                      {/* Blind name preview for selected models */}
-                      {form.target_models.length > 0 && (
-                        <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                          <Label className="text-sm font-medium text-blue-900">Blind Name Assignment Preview:</Label>
-                          <div className="mt-2 space-y-1">
-                            {blindPreview.map((assignment, index) => {
-                              const model = models.find(m => m.id === assignment.modelId)
-                              return (
-                                <div key={assignment.modelId} className="flex items-center justify-between text-sm">
-                                  <span className="text-gray-600">{model?.display_name || model?.name}</span>
-                                  <Badge variant="secondary">{assignment.blindName}</Badge>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      )}
+                    </div>
+                  )}
+                  {form.target_models.length > 0 && (
+                    <div className="p-4 bg-blue-50 rounded-lg">
+                      <Label className="text-sm font-medium text-blue-900">Model Assignment & Temperature:</Label>
+                      <div className="mt-3 space-y-3">
+                        {blindPreview.map((assignment) => {
+                          const model = models.find(m => m.id === assignment.modelId)
+                          const defaultTemp = model?.temperature ?? 0.7
+                          const override = form.temperature_overrides?.[assignment.modelId]
+                          return (
+                            <div key={assignment.modelId} className="flex items-center gap-3">
+                              <span className="text-gray-700 flex-1">{model?.display_name || model?.name}</span>
+                              <Badge variant="secondary">{assignment.blindName}</Badge>
+                              <Input
+                                type="number"
+                                min="0"
+                                max="2"
+                                step="0.1"
+                                placeholder={String(defaultTemp)}
+                                value={override ?? ''}
+                                onChange={(e) => {
+                                  const val = e.target.value ? parseFloat(e.target.value) : null
+                                  setForm(f => ({
+                                    ...f,
+                                    temperature_overrides: { ...f.temperature_overrides, [assignment.modelId]: val }
+                                  }))
+                                }}
+                                className="w-24"
+                              />
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-3">Leave blank for model default. 0 = deterministic • 0.3-0.5 = focused • 0.7 = balanced • 1.0+ = creative</p>
                     </div>
                   )}
                   <div>
                     <Label>Guidelines *</Label>
-                    <Textarea 
-                      value={form.guidelines} 
-                      onChange={(e) => { setForm({ ...form, guidelines: e.target.value }); setErrors(prev => ({ ...prev, guidelines: '' })) }} 
-                      rows={4} 
+                    <RichTextEditor 
+                      content={form.guidelines} 
+                      onChange={(content) => { setForm({ ...form, guidelines: content }); setErrors(prev => ({ ...prev, guidelines: '' })) }}
                       placeholder="Testing guidelines..."
-                      className={errors.guidelines ? 'border-red-500' : ''}
                     />
                     {errors.guidelines && <p className="text-red-500 text-xs mt-1">{errors.guidelines}</p>}
                   </div>
+                  {Object.keys(errors).length > 0 && (
+                    <p className="text-red-500 text-sm text-center">Please fix the errors above before saving.</p>
+                  )}
                   <Button onClick={handleSubmit} className="w-full" disabled={saving}>
                     {saving ? 'Saving...' : (editingId ? 'Update' : 'Create')} Exercise
                   </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Invite Management Dialog */}
+            <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Manage Invites: {inviteExercise?.title}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label>Invite User</Label>
+                    <Input 
+                      value={inviteSearch} 
+                      onChange={e => { setInviteSearch(e.target.value); setInviteUserPage(0) }} 
+                      placeholder="Search by email or name..."
+                      className="mt-1"
+                    />
+                    {(() => {
+                      const filtered = users.filter(u => 
+                        !invites.some(i => i.user_id === u.id) &&
+                        (inviteSearch === '' || 
+                         u.email.toLowerCase().includes(inviteSearch.toLowerCase()) ||
+                         u.full_name?.toLowerCase().includes(inviteSearch.toLowerCase()))
+                      )
+                      const perPage = 5
+                      const totalPages = Math.ceil(filtered.length / perPage)
+                      const paginated = filtered.slice(inviteUserPage * perPage, (inviteUserPage + 1) * perPage)
+                      return (
+                        <div className="mt-2 border rounded-md">
+                          <div className="max-h-40 overflow-y-auto">
+                            {paginated.map(u => (
+                              <div key={u.id} className="flex items-center justify-between p-2 hover:bg-muted cursor-pointer border-b last:border-b-0" onClick={() => addInvite(u.id)}>
+                                <div>
+                                  <span className="text-sm">{u.email}</span>
+                                  {u.full_name && <span className="text-xs text-muted-foreground ml-2">({u.full_name})</span>}
+                                </div>
+                                <UserPlus className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            ))}
+                            {filtered.length === 0 && (
+                              <p className="text-sm text-muted-foreground text-center py-3">No users found</p>
+                            )}
+                          </div>
+                          {totalPages > 1 && (
+                            <div className="flex items-center justify-between p-2 border-t bg-muted/50">
+                              <Button variant="ghost" size="sm" className="text-green-600" disabled={inviteUserPage === 0} onClick={() => setInviteUserPage(p => p - 1)}>Prev</Button>
+                              <span className="text-xs text-muted-foreground">{inviteUserPage + 1} / {totalPages}</span>
+                              <Button variant="ghost" size="sm" className="text-green-600" disabled={inviteUserPage >= totalPages - 1} onClick={() => setInviteUserPage(p => p + 1)}>Next</Button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
+                  </div>
+                  <div>
+                    <Label>Invited Users ({invites.length})</Label>
+                    <div className="mt-2 space-y-2 max-h-48 overflow-y-auto">
+                      {invites.map(inv => (
+                        <div key={inv.id} className="flex items-center justify-between p-2 border rounded">
+                          <div>
+                            <p className="text-sm font-medium">{inv.user?.email}</p>
+                            {inv.user?.full_name && <p className="text-xs text-muted-foreground">{inv.user.full_name}</p>}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={inv.status === 'accepted' ? 'default' : inv.status === 'declined' ? 'destructive' : 'secondary'}>
+                              {inv.status}
+                            </Badge>
+                            <Button variant="ghost" size="icon" onClick={() => removeInvite(inv.id)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                      {invites.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">No invites yet</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </DialogContent>
             </Dialog>
@@ -411,7 +710,6 @@ export default function AdminExercisesPage() {
                           <tr key={ex.id} className="border-b">
                             <td className="py-3 px-2">
                               <div className="font-medium">{ex.title}</div>
-                              <div className="text-xs text-muted-foreground capitalize">{ex.difficulty_level}</div>
                             </td>
                             <td className="py-3 px-2">{ex.category}</td>
                             <td className="py-3 px-2"><Badge variant={statusColor(ex.status)}>{ex.status}</Badge></td>
@@ -424,6 +722,9 @@ export default function AdminExercisesPage() {
                               <span className="flex items-center gap-1"><Users className="h-3 w-3" />{ex.participant_count || 0}{ex.max_participants ? `/${ex.max_participants}` : ''}</span>
                             </td>
                             <td className="py-3 px-2 space-x-1">
+                              {ex.visibility === 'invite_only' && (
+                                <Button size="sm" variant="ghost" onClick={() => openInviteDialog(ex)} title="Manage Invites"><UserPlus className="h-4 w-4" /></Button>
+                              )}
                               <Button size="sm" variant="ghost" onClick={() => handleEdit(ex)}><Pencil className="h-4 w-4" /></Button>
                               <Button size="sm" variant="ghost" onClick={() => handleDelete(ex.id)}><Trash2 className="h-4 w-4" /></Button>
                             </td>

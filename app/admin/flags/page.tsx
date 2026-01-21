@@ -307,11 +307,7 @@ export default function AdminFlagsPage() {
                       <XAxis type="number" />
                       <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12 }} />
                       <Tooltip />
-                      <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                        {stats.byCategory.map((_, index) => (
-                          <Cell key={index} fill={['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6', '#ec4899', '#6b7280', '#14b8a6'][index % 9]} />
-                        ))}
-                      </Bar>
+                      <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>

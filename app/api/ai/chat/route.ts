@@ -61,7 +61,22 @@ export async function POST(request: NextRequest) {
         .eq('id', userId)
     }
 
-    console.log(`Generating response with ${model.name} for exercise ${exerciseId}`)
+    // Get temperature: check for exercise override first, then model default
+    let temperature = model.temperature ?? 0.7
+    if (exerciseId) {
+      const { data: exerciseModel } = await supabaseAdmin
+        .from('exercise_models')
+        .select('temperature_override')
+        .eq('exercise_id', exerciseId)
+        .eq('model_id', modelId)
+        .single()
+      
+      if (exerciseModel?.temperature_override !== null && exerciseModel?.temperature_override !== undefined) {
+        temperature = exerciseModel.temperature_override
+      }
+    }
+
+    console.log(`Generating response with ${model.name} for exercise ${exerciseId} (temp: ${temperature})`)
 
     // Build conversation with history
     const systemPrompt = `You are participating in a blind AI evaluation study. You must follow these rules strictly:
@@ -88,11 +103,30 @@ export async function POST(request: NextRequest) {
     const response = await provider.generateText(fullPrompt, {
       model: model.model_id,
       maxTokens: 1000,
-      temperature: 0.7
+      temperature
     })
 
-    // TODO: Save interaction to database
-    // This will be implemented when we connect to the frontend
+    // Save interaction to database
+    const sessionId = conversationId || crypto.randomUUID()
+    try {
+      const { error: insertError } = await supabaseAdmin.from('interactions').insert({
+        user_id: userId || null,
+        exercise_id: exerciseId,
+        model_id: modelId,
+        session_id: sessionId,
+        prompt: prompt,
+        response: response.content,
+        token_count: response.tokens?.total || null,
+        metadata: {
+          provider: response.provider,
+          model: response.model,
+          tokens: response.tokens
+        }
+      })
+      if (insertError) console.error('Failed to save interaction:', insertError)
+    } catch (e) {
+      console.error('Error saving interaction:', e)
+    }
 
     // Get updated credits balance
     let creditsRemaining = null

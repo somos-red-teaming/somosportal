@@ -7,8 +7,28 @@ import { Badge } from '@/components/ui/badge'
 import { Header } from '@/components/header'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
-import { Calendar, TrendingUp, FileText, AlertCircle, Users, CheckCircle } from 'lucide-react'
+import { Calendar, FileText, AlertCircle, Users, CheckCircle, Shield, Brain, Eye, Lock, AlertTriangle, Zap, Target, Search, MessageSquare, Bot, Sparkles } from 'lucide-react'
 import Link from 'next/link'
+
+const stripHtml = (html: string) => {
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  return doc.body.textContent || ''
+}
+
+const iconMap: Record<string, React.ComponentType<{className?: string}>> = {
+  FileText, Shield, Brain, Eye, Lock, AlertTriangle, Zap, Target, Search, MessageSquare, Bot, Sparkles
+}
+
+const colorClasses: Record<string, string> = {
+  blue: 'bg-blue-500',
+  red: 'bg-red-500',
+  green: 'bg-green-500',
+  purple: 'bg-purple-500',
+  orange: 'bg-orange-500',
+  pink: 'bg-pink-500',
+  cyan: 'bg-cyan-500',
+  yellow: 'bg-yellow-500',
+}
 
 interface Exercise {
   id: string
@@ -22,6 +42,10 @@ interface Exercise {
   max_participants: number | null
   participant_count: number
   is_joined: boolean
+  visibility: string | null
+  team_names: string[]
+  icon: string | null
+  color: string | null
 }
 
 export default function ExercisesPage() {
@@ -32,6 +56,8 @@ export default function ExercisesPage() {
   const [filter, setFilter] = useState('all')
   const [joining, setJoining] = useState<string | null>(null)
 
+  const [visibilityTab, setVisibilityTab] = useState<'public' | 'team' | 'invites'>('public')
+
   useEffect(() => {
     fetchExercises()
   }, [user])
@@ -40,7 +66,7 @@ export default function ExercisesPage() {
     try {
       const { data, error: dbError } = await supabase
         .from('exercises')
-        .select('id, title, description, category, difficulty_level, status, start_date, end_date, max_participants')
+        .select('id, title, description, category, difficulty_level, status, start_date, end_date, max_participants, visibility, icon, color')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
 
@@ -79,10 +105,25 @@ export default function ExercisesPage() {
         })
       }
 
+      // Get team names for team-only exercises
+      const teamNames: Record<string, string[]> = {}
+      const teamExerciseIds = (data || []).filter(e => e.visibility === 'team_only').map(e => e.id)
+      if (teamExerciseIds.length > 0) {
+        const { data: exerciseTeams } = await supabase
+          .from('exercise_teams')
+          .select('exercise_id, team:teams(name)')
+          .in('exercise_id', teamExerciseIds)
+        exerciseTeams?.forEach(et => {
+          if (!teamNames[et.exercise_id]) teamNames[et.exercise_id] = []
+          if (et.team?.name) teamNames[et.exercise_id].push(et.team.name)
+        })
+      }
+
       const enriched = (data || []).map(e => ({
         ...e,
         participant_count: counts[e.id] || 0,
         is_joined: joined[e.id] || false,
+        team_names: teamNames[e.id] || [],
       }))
 
       setExercises(enriched)
@@ -107,7 +148,15 @@ export default function ExercisesPage() {
       status: 'active',
     })
 
-    if (!error) await fetchExercises()
+    if (!error) {
+      // Update invite status to accepted if exists
+      await supabase.from('exercise_invites')
+        .update({ status: 'accepted', responded_at: new Date().toISOString() })
+        .eq('exercise_id', exerciseId)
+        .eq('user_id', userData.id)
+      
+      await fetchExercises()
+    }
     setJoining(null)
   }
 
@@ -123,13 +172,17 @@ export default function ExercisesPage() {
     setJoining(null)
   }
 
-  const categories = ['all', ...new Set(exercises.map(e => e.category).filter(Boolean))]
-  const filtered = filter === 'all' ? exercises : exercises.filter(e => e.category === filter)
-
-  const difficultyColor = (level: string) => {
-    const colors: Record<string, string> = { beginner: 'bg-green-500', intermediate: 'bg-yellow-500', advanced: 'bg-red-500' }
-    return colors[level] || 'bg-gray-500'
-  }
+  // Filter by visibility tab first
+  const visibilityFiltered = exercises.filter(e => 
+    visibilityTab === 'public' 
+      ? (e.visibility === 'public' || e.visibility === null)
+      : visibilityTab === 'team'
+      ? e.visibility === 'team_only'
+      : e.visibility === 'invite_only'
+  )
+  
+  const categories = ['all', ...new Set(visibilityFiltered.map(e => e.category).filter(Boolean))]
+  const filtered = filter === 'all' ? visibilityFiltered : visibilityFiltered.filter(e => e.category === filter)
 
   const isExerciseFull = (ex: Exercise) => Boolean(ex.max_participants && ex.participant_count >= ex.max_participants)
 
@@ -144,6 +197,29 @@ export default function ExercisesPage() {
           </p>
         </div>
 
+        {/* Visibility tabs */}
+        <div className="mb-6 flex gap-2 border-b pb-4">
+          <Button 
+            variant={visibilityTab === 'public' ? 'default' : 'ghost'} 
+            onClick={() => { setVisibilityTab('public'); setFilter('all') }}
+          >
+            Public
+          </Button>
+          <Button 
+            variant={visibilityTab === 'team' ? 'default' : 'ghost'} 
+            onClick={() => { setVisibilityTab('team'); setFilter('all') }}
+          >
+            My Teams
+          </Button>
+          <Button 
+            variant={visibilityTab === 'invites' ? 'default' : 'ghost'} 
+            onClick={() => { setVisibilityTab('invites'); setFilter('all') }}
+          >
+            My Invites
+          </Button>
+        </div>
+
+        {/* Category filter */}
         {categories.length > 1 && (
           <div className="mb-8 flex flex-wrap gap-2">
             {categories.map((cat) => (
@@ -170,18 +246,29 @@ export default function ExercisesPage() {
           <Card className="text-center py-12">
             <CardContent>
               <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h2 className="text-xl font-semibold mb-2">No exercises available</h2>
-              <p className="text-muted-foreground">Check back soon for new red-teaming exercises.</p>
+              <h2 className="text-xl font-semibold mb-2">
+                {visibilityTab === 'team' ? "No team exercises" : visibilityTab === 'invites' ? "No invites" : "No exercises available"}
+              </h2>
+              <p className="text-muted-foreground">
+                {visibilityTab === 'team' 
+                  ? "You're not part of any teams yet, or your teams have no assigned exercises."
+                  : visibilityTab === 'invites'
+                  ? "You haven't been invited to any exercises yet."
+                  : "Check back soon for new red-teaming exercises."}
+              </p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
-            {filtered.map((exercise) => (
+            {filtered.map((exercise) => {
+              const Icon = iconMap[exercise.icon || 'FileText'] || FileText
+              const bgColor = colorClasses[exercise.color || 'blue'] || 'bg-blue-500'
+              return (
               <Card key={exercise.id} className={`flex flex-col ${exercise.is_joined ? 'ring-2 ring-primary' : ''}`}>
                 <CardHeader>
                   <div className="mb-3 flex items-start justify-between">
-                    <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${difficultyColor(exercise.difficulty_level)}`}>
-                      <FileText className="h-6 w-6 text-white" />
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${bgColor}`}>
+                      <Icon className="h-6 w-6 text-white" />
                     </div>
                     <div className="flex gap-2">
                       {exercise.is_joined && <Badge variant="default"><CheckCircle className="h-3 w-3 mr-1" />Joined</Badge>}
@@ -189,28 +276,26 @@ export default function ExercisesPage() {
                     </div>
                   </div>
                   <CardTitle className="text-xl">{exercise.title}</CardTitle>
-                  <CardDescription className="text-base">{exercise.description}</CardDescription>
+                  <CardDescription className="text-base">{stripHtml(exercise.description).slice(0, 150)}{exercise.description.length > 150 ? '...' : ''}</CardDescription>
                 </CardHeader>
 
                 <CardContent className="flex-1">
                   <div className="mb-4 flex flex-wrap gap-2">
-                    <Badge variant="outline">{exercise.category}</Badge>
-                    <Badge variant="outline" className="capitalize">{exercise.difficulty_level}</Badge>
+                    {(exercise.start_date || exercise.end_date) && (
+                      <Badge variant="default" className="bg-primary">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {exercise.end_date ? `Open until ${exercise.end_date.split('T')[0]}` : exercise.start_date ? `Starts ${exercise.start_date.split('T')[0]}` : 'Open'}
+                      </Badge>
+                    )}
+                    <Badge variant="outline">Category: {exercise.category}</Badge>
+                    {exercise.team_names?.map(name => (
+                      <Badge key={name} className="bg-green-100 text-green-800 border-green-300">Team: {name}</Badge>
+                    ))}
                   </div>
                   <div className="space-y-2 text-sm">
-                    {(exercise.start_date || exercise.end_date) && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        <span>{exercise.start_date?.split('T')[0] || 'Now'} - {exercise.end_date?.split('T')[0] || 'Ongoing'}</span>
-                      </div>
-                    )}
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Users className="h-4 w-4" />
                       <span>{exercise.participant_count} participant{exercise.participant_count !== 1 ? 's' : ''}{exercise.max_participants ? ` / ${exercise.max_participants} max` : ''}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <TrendingUp className="h-4 w-4" />
-                      <span className="capitalize">Difficulty: {exercise.difficulty_level}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -235,7 +320,7 @@ export default function ExercisesPage() {
                   )}
                 </CardFooter>
               </Card>
-            ))}
+            )})}
           </div>
         )}
       </div>

@@ -7,7 +7,7 @@ import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
-import { Users, FileText, Flag, Activity, Bot, Code, TestTube, Download } from 'lucide-react'
+import { Users, FileText, Flag, Activity, Bot, Code, TestTube, Download, MessageSquare, UsersRound } from 'lucide-react'
 
 interface Stats {
   users: number
@@ -105,6 +105,18 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
+                  <UsersRound className="h-5 w-5" />
+                  Teams
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">Create teams and manage team memberships.</p>
+                <Button asChild><Link href="/admin/teams">Manage Teams</Link></Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <Bot className="h-5 w-5" />
                   AI Models
                 </CardTitle>
@@ -123,7 +135,22 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-4">Review and manage flagged AI responses.</p>
-                <Button asChild><Link href="/admin/flags">Manage Flags</Link></Button>
+                <div className="flex gap-2">
+                  <Button asChild><Link href="/admin/flags">Manage Flags</Link></Button>
+                  <Button variant="outline" asChild><Link href="/admin/flag-packages">Packages</Link></Button>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  Conversations
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">View all participant conversations with AI models.</p>
+                <Button asChild><Link href="/admin/conversations">Manage Conversations</Link></Button>
               </CardContent>
             </Card>
           </div>

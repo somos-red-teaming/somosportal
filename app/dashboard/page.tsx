@@ -85,6 +85,7 @@ export default function DashboardPage() {
                 <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/admin/exercises">Manage Exercises</Link></Button>
                 <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/admin/models">Manage Models</Link></Button>
                 <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/admin/flags">Manage Flags</Link></Button>
+                <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/admin/conversations">Conversations</Link></Button>
                 <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/admin/export">Export Data</Link></Button>
                 <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/api-tester">API Tester</Link></Button>
                 <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/api-docs">API Docs</Link></Button>

@@ -25,6 +25,7 @@ interface AIModel {
   capabilities: string[]
   configuration: Record<string, string>
   credit_cost: number
+  temperature: number
   is_active: boolean
   is_public: boolean
   created_at: string
@@ -39,6 +40,7 @@ const emptyModel = {
   capabilities: [] as string[],
   configuration: {} as Record<string, string>,
   credit_cost: 0,
+  temperature: 0.7,
   is_active: true,
   is_public: true
 }
@@ -72,10 +74,31 @@ export default function AdminModelsPage() {
   const [testing, setTesting] = useState<string | null>(null)
   const [testResults, setTestResults] = useState<Record<string, boolean>>({})
   const [testErrors, setTestErrors] = useState<Record<string, string>>({})
+  const [availableModels, setAvailableModels] = useState<{ id: string; name: string; context_window?: number }[]>([])
+  const [loadingModels, setLoadingModels] = useState(false)
 
   useEffect(() => {
     fetchModels()
   }, [])
+
+  // Fetch available models when provider changes
+  useEffect(() => {
+    if (form.provider && dialogOpen) {
+      fetchAvailableModels(form.provider)
+    }
+  }, [form.provider, dialogOpen])
+
+  const fetchAvailableModels = async (provider: string) => {
+    setLoadingModels(true)
+    try {
+      const res = await fetch(`/api/models/list?provider=${provider}`)
+      const data = await res.json()
+      setAvailableModels(data.models || [])
+    } catch (e) {
+      setAvailableModels([])
+    }
+    setLoadingModels(false)
+  }
 
   const fetchModels = async () => {
     setLoading(true)
@@ -125,6 +148,7 @@ export default function AdminModelsPage() {
       capabilities: model.capabilities || [],
       configuration: model.configuration || {},
       credit_cost: model.credit_cost || 0,
+      temperature: model.temperature ?? 0.7,
       is_active: model.is_active,
       is_public: true
     })
@@ -233,11 +257,58 @@ export default function AdminModelsPage() {
                     </div>
                     <div>
                       <Label>Model ID *</Label>
-                      <Input 
-                        value={form.model_id} 
-                        onChange={(e) => setForm({ ...form, model_id: e.target.value })}
-                        placeholder="e.g., gpt-4, claude-3-sonnet"
-                      />
+                      {loadingModels ? (
+                        <div className="h-10 flex items-center text-sm text-muted-foreground">Loading models...</div>
+                      ) : availableModels.length > 0 ? (
+                        <Select value={form.model_id} onValueChange={(v) => {
+                          const selected = availableModels.find((m: any) => m.id === v)
+                          let caps = form.capabilities
+                          // Auto-fill capabilities for HuggingFace based on pipeline_tag
+                          if (form.provider === 'huggingface' && selected?.pipeline_tag) {
+                            const tagMap: Record<string, string[]> = {
+                              'text-to-image': ['image_generation'],
+                              'text-generation': ['text_generation', 'conversation'],
+                              'image-to-text': ['vision', 'multimodal'],
+                              'visual-question-answering': ['vision', 'multimodal'],
+                            }
+                            caps = tagMap[selected.pipeline_tag] || []
+                          }
+                          setForm({ ...form, model_id: v, capabilities: caps })
+                        }}>
+                          <SelectTrigger>
+                            <span className="truncate max-w-[180px] block">
+                              {form.model_id ? (form.model_id.length > 25 ? form.model_id.slice(0, 25) + '...' : form.model_id) : 'Select a model'}
+                            </span>
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            {availableModels.map((m: any) => (
+                              <SelectItem key={m.id} value={m.id}>
+                                {m.name} {m.context_window ? `(${Math.round(m.context_window/1000)}k)` : ''}{m.downloads ? ` • ${(m.downloads/1000).toFixed(0)}k` : ''}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input 
+                          value={form.model_id} 
+                          onChange={(e) => setForm({ ...form, model_id: e.target.value })}
+                          placeholder="e.g., gpt-4, claude-3-sonnet"
+                        />
+                      )}
+                      {form.provider === 'huggingface' && (
+                        <Input 
+                          className="mt-2"
+                          placeholder="Search models (e.g., flux, stable-diffusion)..."
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              const search = (e.target as HTMLInputElement).value
+                              fetch(`/api/models/list?provider=huggingface&search=${encodeURIComponent(search)}`)
+                                .then(r => r.json())
+                                .then(d => setAvailableModels(d.models || []))
+                            }
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -251,6 +322,21 @@ export default function AdminModelsPage() {
                         placeholder="0 = free"
                       />
                       <p className="text-xs text-muted-foreground mt-1">0 = free, 1+ = deducts from user credits</p>
+                    </div>
+                    <div>
+                      <Label>Temperature (0.0 - 2.0)</Label>
+                      <Input 
+                        type="number"
+                        min="0"
+                        max="2"
+                        step="0.1"
+                        value={form.temperature} 
+                        onChange={(e) => setForm({ ...form, temperature: parseFloat(e.target.value) || 0.7 })}
+                        placeholder="0.7"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        0 = deterministic • 0.3-0.5 = focused • 0.7 = balanced • 1.0+ = creative
+                      </p>
                     </div>
                   </div>
                   <div>

@@ -39,26 +39,6 @@ export default function Home() {
               <Link href="#learn-more">Learn More</Link>
             </Button>
           </div>
-
-          {/* Stats */}
-          <div className="mt-16 grid grid-cols-2 gap-8 md:grid-cols-4">
-            <div>
-              <div className="text-3xl font-bold text-primary">12</div>
-              <div className="text-sm text-muted-foreground">Active Exercises</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-primary">2,847</div>
-              <div className="text-sm text-muted-foreground">Participants</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-primary">18,392</div>
-              <div className="text-sm text-muted-foreground">Flags Submitted</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-primary">94%</div>
-              <div className="text-sm text-muted-foreground">Accuracy Rate</div>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -177,9 +157,9 @@ export default function Home() {
                   3
                 </div>
                 <div>
-                  <h3 className="mb-2 text-xl font-semibold">Flag Issues</h3>
+                  <h3 className="mb-2 text-xl font-semibold">Flag Harms</h3>
                   <p className="text-muted-foreground">
-                    Report harmful content, misinformation, bias, or other concerns with detailed annotations and severity ratings
+                    Capture findings including harmful content, misinformation, bias, or other concerns with detailed annotations and severity ratings
                   </p>
                 </div>
               </div>
