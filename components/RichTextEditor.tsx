@@ -24,7 +24,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start typing.
         height: 200,
         menubar: false,
         plugins: 'lists',
-        toolbar: 'bold italic underline | h2 h3 | bullist numlist | hr',
+        toolbar: 'bold italic underline | blocks | bullist numlist | hr',
         placeholder,
         content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; }',
         branding: false,
@@ -32,6 +32,8 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start typing.
         promotion: false,
         base_url: '/tinymce',
         suffix: '.min',
+        skin: 'oxide',
+        icons: 'default',
       }}
     />
   )
