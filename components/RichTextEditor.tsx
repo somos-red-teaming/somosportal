@@ -30,6 +30,8 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start typing.
         branding: false,
         statusbar: false,
         promotion: false,
+        base_url: '/tinymce',
+        suffix: '.min',
       }}
     />
   )
