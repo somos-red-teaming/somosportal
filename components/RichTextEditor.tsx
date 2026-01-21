@@ -1,11 +1,6 @@
 'use client'
 
-import dynamic from 'next/dynamic'
-
-const Editor = dynamic(
-  () => import('@tinymce/tinymce-react').then(m => m.Editor),
-  { ssr: false }
-)
+import { Editor } from '@tinymce/tinymce-react'
 
 interface RichTextEditorProps {
   content: string
@@ -19,21 +14,31 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start typing.
       tinymceScriptSrc="/tinymce/tinymce.min.js"
       value={content}
       onEditorChange={onChange}
-      licenseKey="gpl"
       init={{
         height: 200,
+        base_url: '/tinymce',
+        suffix: '.min',
+        license_key: 'gpl',
         menubar: false,
         plugins: 'lists',
-        toolbar: 'bold italic underline | blocks | bullist numlist | hr',
-        placeholder,
+        toolbar: 'bold italic underline | h2 h3 | bullist numlist | hr',
+        setup: (editor) => {
+          editor.ui.registry.addButton('h2', {
+            text: 'H2',
+            onAction: () => editor.execCommand('FormatBlock', false, 'h2')
+          })
+          editor.ui.registry.addButton('h3', {
+            text: 'H3',
+            onAction: () => editor.execCommand('FormatBlock', false, 'h3')
+          })
+        },
+        skin: 'oxide',
+        content_css: 'default',
         content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; }',
+        placeholder,
         branding: false,
         statusbar: false,
         promotion: false,
-        base_url: '/tinymce',
-        suffix: '.min',
-        skin: 'oxide',
-        icons: 'default',
       }}
     />
   )
