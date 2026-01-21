@@ -33,7 +33,10 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start typing.
           })
         },
         skin: 'oxide',
-        content_css: 'default',
+        icons: 'default',
+        skin_url: '/tinymce/skins/ui/oxide',
+        icons_url: '/tinymce/icons/default/icons.min.js',
+        content_css: '/tinymce/skins/content/default/content.min.css',
         content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; }',
         placeholder,
         branding: false,
