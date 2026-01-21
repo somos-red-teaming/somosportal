@@ -18,7 +18,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start typing.
         height: 200,
         base_url: '/tinymce',
         suffix: '.min',
-        license_key: 'gpl',
+        license_key: 'gpl' as any,
         menubar: false,
         plugins: 'lists',
         toolbar: 'bold italic underline | h2 h3 | bullist numlist | hr',
