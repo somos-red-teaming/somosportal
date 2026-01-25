@@ -178,12 +178,12 @@ export default function TeamsPage() {
       <div className="min-h-screen bg-background">
         <Header />
         <main className="container mx-auto px-4 py-8">
-          <div className="flex items-center gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
             <Link href="/admin">
               <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4 mr-2" />Back</Button>
             </Link>
             <h1 className="text-2xl font-bold">Team Management</h1>
-            <Button onClick={() => { setForm({ name: '', description: '' }); setEditingId(null); setDialogOpen(true) }} className="ml-auto">
+            <Button onClick={() => { setForm({ name: '', description: '' }); setEditingId(null); setDialogOpen(true) }} className="w-full sm:w-auto sm:ml-auto">
               <Plus className="h-4 w-4 mr-2" />New Team
             </Button>
           </div>

@@ -14,6 +14,20 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ArrowLeft, Search, ChevronLeft, ChevronRight, MessageSquare, Download, Eye, X, User, Bot, FileJson, FileSpreadsheet, Calendar } from 'lucide-react'
 import Link from 'next/link'
 
+// Component to load images from private storage with signed URL
+function ImageFromStorage({ path }: { path: string }) {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.storage.from(path.split('/')[0]).createSignedUrl(path.split('/').slice(1).join('/'), 3600)
+      if (data?.signedUrl) setUrl(data.signedUrl)
+    }
+    load()
+  }, [path])
+  if (!url) return <div className="text-muted-foreground">Loading image...</div>
+  return <img src={url} alt="Generated" className="max-w-md rounded" />
+}
+
 interface Interaction {
   id: string
   session_id: string
@@ -517,7 +531,13 @@ export default function AdminConversationsPage() {
                               <div className="text-xs text-muted-foreground mb-1">
                                 {msg.model?.display_name || msg.model?.name}
                               </div>
-                              <div className="whitespace-pre-wrap">{msg.response}</div>
+                              {msg.response.startsWith('storage:') ? (
+                                <ImageFromStorage path={msg.response.replace('storage:', '')} />
+                              ) : msg.response.startsWith('http') && (msg.response.includes('.png') || msg.response.includes('.jpg') || msg.response.includes('image')) ? (
+                                <img src={msg.response} alt="Generated" className="max-w-md rounded" />
+                              ) : (
+                                <div className="whitespace-pre-wrap">{msg.response}</div>
+                              )}
                             </div>
                           </div>
                         )}

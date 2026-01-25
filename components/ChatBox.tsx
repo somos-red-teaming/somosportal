@@ -216,6 +216,9 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
           prompt,
           modelId,
           blindName: modelName,
+          exerciseId,
+          userId,
+          conversationId: sessionId,
         }),
       })
 

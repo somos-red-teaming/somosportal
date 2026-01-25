@@ -250,7 +250,7 @@ export default function Home() {
           </div>
           
           <div className="mt-12 border-t border-border pt-8 text-center text-sm text-muted-foreground">
-            <p>© 2025 SOMOS Civic Lab. All rights reserved.</p>
+            <p>© 2026 SOMOS Civic Lab. All rights reserved.</p>
           </div>
         </div>
       </footer>

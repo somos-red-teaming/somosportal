@@ -377,7 +377,7 @@ export default function AdminExercisesPage() {
       <div className="min-h-screen bg-background">
         <Header />
         <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="icon" asChild>
                 <Link href="/admin"><ArrowLeft className="h-4 w-4" /></Link>
@@ -390,7 +390,7 @@ export default function AdminExercisesPage() {
               setErrors({})
             }}>
               <DialogTrigger asChild>
-                <Button><Plus className="h-4 w-4 mr-2" />New Exercise</Button>
+                <Button className="w-full sm:w-auto"><Plus className="h-4 w-4 mr-2" />New Exercise</Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
