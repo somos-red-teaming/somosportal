@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -28,6 +28,8 @@ interface Exercise {
   start_date: string | null
   end_date: string | null
   max_participants: number | null
+  timer_enabled?: boolean
+  time_limit_minutes?: number
 }
 
 interface AIModel {
@@ -61,7 +63,12 @@ const flagCategories = [
   { value: 'off_topic', label: 'Off-Topic Response' },
 ]
 
-export default function ExerciseClient() {
+interface ExerciseClientProps {
+  serverUserId?: string
+  initialHistory: Record<string, any[]>
+}
+
+export default function ExerciseClient({ serverUserId, initialHistory }: ExerciseClientProps) {
   const params = useParams()
   const { user } = useAuth()
   const [exercise, setExercise] = useState<Exercise | null>(null)
@@ -73,6 +80,12 @@ export default function ExerciseClient() {
   const [dbUserId, setDbUserId] = useState<string | null>(null)
 
   const [selectedModels, setSelectedModels] = useState<string[]>([])
+  const [timerState, setTimerState] = useState<{
+    participantId: string | null
+    timeRemaining: number
+    expired: boolean
+  }>({ participantId: null, timeRemaining: 0, expired: false })
+  const hasExpiredRef = useRef(false)
 
   useEffect(() => {
     fetchData()
@@ -116,6 +129,28 @@ export default function ExerciseClient() {
             .eq('user_id', userData.id)
             .single()
           setParticipation(part)
+
+          // Fetch timer status if timer is enabled
+          if (exerciseRes.data?.timer_enabled && part) {
+            try {
+              const { data: { user } } = await supabase.auth.getUser()
+              if (user) {
+                const res = await fetch(`/api/exercises/timer?exerciseId=${params.id}&userId=${user.id}`, {
+                  credentials: 'include'
+                })
+                  const timerData = await res.json()
+                if (timerData.active) {
+                  setTimerState({
+                    participantId: timerData.participantId,
+                    timeRemaining: timerData.timeRemaining,
+                    expired: timerData.expired
+                  })
+                }
+              }
+            } catch (error) {
+              console.error('Failed to fetch timer status:', error)
+            }
+          }
         }
       }
     } catch {
@@ -144,6 +179,33 @@ export default function ExerciseClient() {
       user_id: userData.id,
       status: 'active',
     })
+
+    // Start timer if enabled
+    if (exercise?.timer_enabled) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        
+        const res = await fetch('/api/exercises/timer', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ exerciseId: params.id, userId: user.id })
+        })
+        const data = await res.json()
+        console.log('Timer start response:', data)
+        if (data.participantId) {
+          setTimerState({
+            participantId: data.participantId,
+            timeRemaining: data.timeRemaining,
+            expired: data.expired
+          })
+        }
+      } catch (error) {
+        console.error('Failed to start timer:', error)
+      }
+    }
+
     fetchData()
   }
 
@@ -159,6 +221,33 @@ export default function ExerciseClient() {
   const handleCreditsUpdate = (credits: number) => {
     // Dispatch custom event for header to listen
     window.dispatchEvent(new CustomEvent('creditsUpdate', { detail: credits }))
+  }
+
+  const handleTimerExpire = async () => {
+    // Only handle once
+    if (hasExpiredRef.current) return
+    hasExpiredRef.current = true
+    
+    setTimerState(prev => ({ ...prev, expired: true }))
+    
+    // Mark exercise as completed
+    if (timerState.participantId) {
+      try {
+        await fetch('/api/exercises/timer/complete', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            participantId: timerState.participantId, 
+            reason: 'expired' 
+          })
+        })
+      } catch (error) {
+        console.error('Failed to complete exercise:', error)
+      }
+    }
+    
+    alert('Time expired! Your exercise has been completed and saved.')
   }
 
 
@@ -270,6 +359,12 @@ export default function ExerciseClient() {
                       userId={dbUserId || undefined}
                       onSendMessage={handleMessageSent}
                       onCreditsUpdate={handleCreditsUpdate}
+                      timerEnabled={exercise?.timer_enabled}
+                      isTimerExpired={timerState.expired}
+                      participantId={timerState.participantId || undefined}
+                      initialTimeRemaining={timerState.timeRemaining}
+                      onTimerExpire={handleTimerExpire}
+                      initialHistory={initialHistory[`${params.id}-${models[0].ai_models.id}`] || []}
                     />
                   </div>
                 ) : (
@@ -288,6 +383,12 @@ export default function ExerciseClient() {
                           userId={dbUserId || undefined}
                           onSendMessage={handleMessageSent}
                           onCreditsUpdate={handleCreditsUpdate}
+                          timerEnabled={exercise?.timer_enabled}
+                          isTimerExpired={timerState.expired}
+                          participantId={timerState.participantId || undefined}
+                          initialTimeRemaining={timerState.timeRemaining}
+                          onTimerExpire={handleTimerExpire}
+                          initialHistory={initialHistory[`${params.id}-${model.ai_models.id}`] || []}
                         />
                       </div>
                     ))}

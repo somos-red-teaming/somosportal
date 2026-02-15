@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 
 interface AuthContextType {
   user: User | null
@@ -35,6 +35,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
+    const supabase = createClient()
+
     // Get initial session
     const getInitialSession = async () => {
       try {
@@ -63,6 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const signUp = async (email: string, password: string, fullName: string) => {
+    const supabase = createClient()
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -76,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signIn = async (email: string, password: string) => {
+    const supabase = createClient()
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -99,6 +103,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signInWithProvider = async (provider: 'google' | 'github') => {
+    const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -109,11 +114,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
+    const supabase = createClient()
     const { error } = await supabase.auth.signOut()
     return { error }
   }
 
   const resetPassword = async (email: string) => {
+    const supabase = createClient()
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/reset-password`,
     })

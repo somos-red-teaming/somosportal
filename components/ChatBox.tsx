@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -12,6 +12,23 @@ import { Send, User, Bot, Copy, Image, Flag, Settings2, X } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { TimerDisplay } from './TimerDisplay'
+
+import { supabase } from '@/lib/supabase'
+
+// Component to load images from private storage with signed URL
+function ImageFromStorage({ path }: { path: string }) {
+  const [url, setUrl] = useState<string | null>(null)
+  useEffect(() => {
+    const load = async () => {
+      const { data } = await supabase.storage.from(path.split('/')[0]).createSignedUrl(path.split('/').slice(1).join('/'), 3600)
+      if (data?.signedUrl) setUrl(data.signedUrl)
+    }
+    load()
+  }, [path])
+  if (!url) return <div className="text-muted-foreground">Loading image...</div>
+  return <img src={url} alt="Generated" className="max-w-md rounded" />
+}
 
 interface Message {
   id: string
@@ -28,6 +45,12 @@ interface ChatBoxProps {
   userId?: string
   onSendMessage?: (message: string) => void
   onCreditsUpdate?: (credits: number) => void
+  timerEnabled?: boolean
+  isTimerExpired?: boolean
+  participantId?: string
+  initialTimeRemaining?: number
+  onTimerExpire?: () => void
+  initialHistory?: any[]
 }
 
 const defaultFlagCategories = [
@@ -50,7 +73,7 @@ const defaultFlagCategories = [
  * @param exerciseId - Exercise ID for context
  * @param onSendMessage - Callback when user sends a message
  */
-export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage, onCreditsUpdate }: ChatBoxProps) {
+export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage, onCreditsUpdate, timerEnabled, isTimerExpired, participantId, initialTimeRemaining, onTimerExpire, initialHistory }: ChatBoxProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -62,10 +85,61 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
   const [sessionId] = useState(() => crypto.randomUUID())
 
   // Tool mode state (for image generation)
+  const [isExpired, setIsExpired] = useState(isTimerExpired || false)
+  
+  // Update expired state when prop changes
+  useEffect(() => {
+    if (isTimerExpired) {
+      setIsExpired(true)
+    }
+  }, [isTimerExpired])
   const [imageMode, setImageMode] = useState(false)
 
   // Flag categories (loaded from exercise package or default)
   const [flagCategoryOptions, setFlagCategoryOptions] = useState(defaultFlagCategories)
+
+  // Load initial history from props
+  useEffect(() => {
+    console.log('ChatBox initialHistory:', initialHistory)
+    if (initialHistory && initialHistory.length > 0) {
+      const history: Message[] = []
+      initialHistory.forEach((interaction: any) => {
+        history.push({
+          id: `${interaction.id}-user`,
+          type: 'user',
+          content: interaction.prompt,
+          timestamp: new Date(interaction.created_at)
+        })
+        if (interaction.response) {
+          if (interaction.response.startsWith('storage:')) {
+            history.push({
+              id: `${interaction.id}-ai`,
+              type: 'ai',
+              content: '',
+              timestamp: new Date(interaction.created_at),
+              imageUrl: interaction.response.replace('storage:', '')
+            })
+          } else {
+            history.push({
+              id: `${interaction.id}-ai`,
+              type: 'ai',
+              content: interaction.response,
+              timestamp: new Date(interaction.created_at)
+            })
+          }
+        }
+      })
+      console.log('Setting messages:', history)
+      setMessages(history)
+    }
+  }, [])
+
+  // Update expired state when timer expires
+  useEffect(() => {
+    if (timerEnabled && initialTimeRemaining !== undefined && initialTimeRemaining <= 0) {
+      setIsExpired(true)
+    }
+  }, [timerEnabled, initialTimeRemaining])
 
   // Flagging state
   const [flagCategories, setFlagCategories] = useState<string[]>([]) // Changed to array for multiple selection
@@ -94,6 +168,39 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
     }
     loadFlagCategories()
   }, [exerciseId])
+
+  // Timer update handler
+  const handleTimerUpdate = useCallback(async (elapsedSeconds: number) => {
+    // Don't update if expired or no participant
+    if (!participantId || isExpired) return
+    
+    try {
+      const res = await fetch('/api/exercises/timer/update', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ participantId, elapsedSeconds })
+      })
+      
+      if (!res.ok) {
+        const error = await res.json()
+        // Don't log if exercise is already completed - this is expected during cleanup
+        if (error.expired || error.completed) {
+          return
+        }
+        console.error('Timer update failed:', error)
+      }
+    } catch (error) {
+      console.error('Failed to update timer:', error)
+    }
+  }, [participantId, isExpired])
+
+  const handleTimerExpireInternal = () => {
+    setIsExpired(true)
+    onTimerExpire?.()
+  }
+
+
 
   /**
    * Auto-scroll to bottom when new messages arrive - contained within chatbox
@@ -467,6 +574,15 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
           {modelName}
         </h3>
         <div className="flex items-center gap-2">
+          {timerEnabled && participantId && initialTimeRemaining !== undefined && (
+            <TimerDisplay
+              participantId={participantId}
+              initialTimeRemaining={initialTimeRemaining}
+              isExpired={isExpired}
+              onExpire={handleTimerExpireInternal}
+              onUpdate={handleTimerUpdate}
+            />
+          )}
           <Dialog open={flagDialogOpen} onOpenChange={setFlagDialogOpen}>
             <DialogTrigger asChild>
               <Button
@@ -608,32 +724,8 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
                         </div>
                         {/* Display image if present */}
                         {message.imageUrl && (
-                          <div className="mt-2 relative group">
-                            <img 
-                              src={message.imageUrl} 
-                              alt="Generated image"
-                              className="max-w-full h-auto rounded-lg border border-gray-200 dark:border-gray-600 cursor-pointer"
-                              style={{ maxHeight: '300px' }}
-                              onClick={() => setViewerImage(message.imageUrl!)}
-                              title="Click to view full size"
-                            />
-                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => setViewerImage(message.imageUrl!)}
-                                className="p-1.5 bg-black/50 hover:bg-black/70 rounded text-white text-xs"
-                                title="Open full size"
-                              >
-                                🔍
-                              </button>
-                              <a
-                                href={message.imageUrl}
-                                download={`image-${Date.now()}.png`}
-                                className="p-1.5 bg-black/50 hover:bg-black/70 rounded text-white text-xs"
-                                title="Download"
-                              >
-                                ⬇️
-                              </a>
-                            </div>
+                          <div className="mt-2">
+                            <ImageFromStorage path={message.imageUrl} />
                           </div>
                         )}
                       </>
@@ -697,7 +789,7 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
         <div className="flex gap-1.5 sm:gap-2 h-full" onKeyDown={(e) => e.stopPropagation()}>
           <Textarea
             ref={inputRef}
-            placeholder={`Message ${modelName}...`}
+            placeholder={isExpired ? "Time expired - Exercise completed" : `Message ${modelName}...`}
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -708,7 +800,7 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
             }}
             rows={1}
             className="resize-none text-xs sm:text-sm border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 min-h-[32px] sm:min-h-[36px] max-h-[48px] sm:max-h-[60px] flex-1 min-w-0"
-            disabled={isLoading}
+            disabled={isLoading || isExpired}
             style={{ fieldSizing: 'content' } as any}
           />
           <DropdownMenu>

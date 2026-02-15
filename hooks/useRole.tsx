@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useAuth } from './useAuth'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 
 /**
  * Hook to fetch and manage user role from database
@@ -20,6 +20,7 @@ export function useRole() {
     }
 
     const fetchRole = async () => {
+      const supabase = createClient()
       const { data } = await supabase
         .from('users')
         .select('role')

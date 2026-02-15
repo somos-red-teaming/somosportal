@@ -168,6 +168,26 @@ export default function ExercisesPage() {
     const { data: userData } = await supabase.from('users').select('id').eq('auth_user_id', user.id).single()
     if (!userData) { setJoining(null); return }
 
+    // Check if exercise has been started or completed
+    const { data: participation } = await supabase
+      .from('exercise_participation')
+      .select('completed_at, time_expired, time_spent_seconds')
+      .eq('exercise_id', exerciseId)
+      .eq('user_id', userData.id)
+      .single()
+    
+    if (participation?.completed_at || participation?.time_expired) {
+      alert('Cannot leave a completed exercise. Your results have been saved.')
+      setJoining(null)
+      return
+    }
+    
+    if (participation && participation.time_spent_seconds > 0) {
+      alert('Cannot leave an exercise that has been started. Please complete it or wait for the timer to expire.')
+      setJoining(null)
+      return
+    }
+
     await supabase.from('exercise_participation').delete().eq('exercise_id', exerciseId).eq('user_id', userData.id)
     await fetchExercises()
     setJoining(null)

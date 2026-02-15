@@ -71,6 +71,8 @@ const emptyExercise = {
   assigned_teams: [] as string[],
   icon: 'FileText',
   color: 'blue',
+  timer_enabled: false,
+  time_limit_minutes: '',
 }
 
 const iconMap: Record<string, React.ComponentType<{className?: string}>> = {
@@ -262,6 +264,8 @@ export default function AdminExercisesPage() {
       visibility: form.visibility,
       icon: form.icon,
       color: form.color,
+      timer_enabled: form.timer_enabled,
+      time_limit_minutes: form.timer_enabled && form.time_limit_minutes ? parseInt(form.time_limit_minutes) : null,
     }
 
     let exerciseId = editingId
@@ -340,6 +344,8 @@ export default function AdminExercisesPage() {
       assigned_teams: exerciseTeams?.map(et => et.team_id) || [],
       icon: ex.icon || 'FileText',
       color: ex.color || 'blue',
+      timer_enabled: (ex as any).timer_enabled || false,
+      time_limit_minutes: (ex as any).time_limit_minutes?.toString() || '',
     })
     setEditingId(ex.id)
     setDialogOpen(true)
@@ -485,6 +491,33 @@ export default function AdminExercisesPage() {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+                  <div className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="timer_enabled"
+                        checked={form.timer_enabled}
+                        onChange={(e) => setForm({ ...form, timer_enabled: e.target.checked, time_limit_minutes: e.target.checked ? form.time_limit_minutes : '' })}
+                        className="h-4 w-4"
+                      />
+                      <Label htmlFor="timer_enabled" className="cursor-pointer font-medium">Enable Time Limit</Label>
+                    </div>
+                    {form.timer_enabled && (
+                      <div>
+                        <Label>Time Limit (minutes) *</Label>
+                        <Input 
+                          type="number" 
+                          min="1"
+                          value={form.time_limit_minutes} 
+                          onChange={(e) => setForm({ ...form, time_limit_minutes: e.target.value })} 
+                          placeholder="e.g., 30, 60, 120"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Exercise will lock when time expires. Timer pauses when user leaves.
+                        </p>
+                      </div>
+                    )}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>

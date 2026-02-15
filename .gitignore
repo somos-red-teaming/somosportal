@@ -128,3 +128,6 @@ playwright-report/
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Agent files
+AGENTS.md

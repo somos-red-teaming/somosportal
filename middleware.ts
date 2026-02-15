@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
 // In-memory rate limit store
 const requests = new Map<string, { count: number; resetTime: number }>()
@@ -27,22 +28,65 @@ function checkRateLimit(ip: string, limit: number): boolean {
   return true
 }
 
-export function middleware(request: NextRequest) {
-  // Only rate limit API routes
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
+
+  // Refresh Supabase session
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          response = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  await supabase.auth.getUser()
+
+  // Only rate limit API routes, but exclude timer updates
   if (request.nextUrl.pathname.startsWith('/api/')) {
+    // Skip rate limiting for timer updates (they happen every second)
+    if (request.nextUrl.pathname.startsWith('/api/exercises/timer/update')) {
+      return response
+    }
+    
     const ip = getClientIP(request)
     
     if (!checkRateLimit(ip, API_LIMIT)) {
-      return NextResponse.json(
+      // Return 429 with refreshed cookies
+      const rateLimitResponse = NextResponse.json(
         { error: 'Too many requests. Please try again later.' },
         { status: 429 }
       )
+      // Copy cookies from response
+      response.cookies.getAll().forEach(cookie => {
+        rateLimitResponse.cookies.set(cookie.name, cookie.value)
+      })
+      return rateLimitResponse
     }
   }
 
-  return NextResponse.next()
+  return response
 }
 
 export const config = {
-  matcher: '/api/:path*'
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }
