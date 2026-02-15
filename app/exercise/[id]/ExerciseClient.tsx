@@ -164,9 +164,18 @@ export default function ExerciseClient({ serverUserId, initialHistory }: Exercis
   const isExerciseFull = Boolean(exercise?.max_participants && participantCount >= exercise.max_participants)
 
   const handleJoin = async () => {
-    if (!user) return
+    console.log('=== handleJoin called ===')
+    if (!user) {
+      console.log('No user, returning')
+      return
+    }
     
+    console.log('Creating supabase client...')
     const supabase = createClient()
+    
+    // Debug: Check if we have a session
+    const { data: { session } } = await supabase.auth.getSession()
+    console.log('Join - Session:', session?.user?.id)
     
     // Check if exercise is full
     if (exercise?.max_participants && participantCount >= exercise.max_participants) {
@@ -174,14 +183,17 @@ export default function ExerciseClient({ serverUserId, initialHistory }: Exercis
       return
     }
     
-    const { data: userData } = await supabase.from('users').select('id').eq('auth_user_id', user.id).single()
+    const { data: userData, error: userError } = await supabase.from('users').select('id').eq('auth_user_id', user.id).single()
+    console.log('Join - userData:', userData, 'error:', userError)
     if (!userData) return
 
-    await supabase.from('exercise_participation').insert({
+    const { data: insertData, error: insertError } = await supabase.from('exercise_participation').insert({
       exercise_id: params.id,
       user_id: userData.id,
       status: 'active',
     })
+    
+    console.log('Join - insert result:', insertData, 'error:', insertError)
 
     // Start timer if enabled
     if (exercise?.timer_enabled) {

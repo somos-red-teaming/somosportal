@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Header } from '@/components/header'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { Calendar, FileText, AlertCircle, Users, CheckCircle, Shield, Brain, Eye, Lock, AlertTriangle, Zap, Target, Search, MessageSquare, Bot, Sparkles } from 'lucide-react'
 import Link from 'next/link'
@@ -64,6 +64,7 @@ export default function ExercisesPage() {
 
   const fetchExercises = async () => {
     try {
+      const supabase = createClient()
       const { data, error: dbError } = await supabase
         .from('exercises')
         .select('id, title, description, category, difficulty_level, status, start_date, end_date, max_participants, visibility, icon, color')
@@ -140,6 +141,7 @@ export default function ExercisesPage() {
     if (!user) return
     setJoining(exerciseId)
 
+    const supabase = createClient()
     const { data: userData } = await supabase.from('users').select('id').eq('auth_user_id', user.id).single()
     if (!userData) { setJoining(null); return }
 
@@ -165,6 +167,7 @@ export default function ExercisesPage() {
     if (!user) return
     setJoining(exerciseId)
 
+    const supabase = createClient()
     const { data: userData } = await supabase.from('users').select('id').eq('auth_user_id', user.id).single()
     if (!userData) { setJoining(null); return }
 

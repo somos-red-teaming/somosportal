@@ -18,12 +18,12 @@ Replace all imports of `@/lib/supabase` with:
 ### Phase 1: Critical Auth Infrastructure (MUST DO FIRST)
 - [x] `hooks/useAuth.tsx` - Core auth hook ✅
 - [x] `hooks/useRole.tsx` - Role checking ✅
-- [ ] `lib/blind-assignment.ts` - Model assignment utility (DEFERRED - needs refactor to accept client param)
+- [x] `lib/blind-assignment.ts` - Model assignment utility (PARTIAL - getExerciseModels updated) ✅
 
 ### Phase 2: Core Components (5 files)
-- [ ] `components/header.tsx`
-- [ ] `components/ChatBox.tsx`
-- [ ] `app/exercise/[id]/ExerciseClient.tsx`
+- [x] `components/header.tsx` ✅
+- [x] `components/ChatBox.tsx` ✅
+- [x] `app/exercise/[id]/ExerciseClient.tsx` ✅
 - [ ] `app/exercises/page.tsx`
 - [ ] `app/dashboard/page.tsx`
 
@@ -105,7 +105,24 @@ const supabase = await createClient()
 - Middleware already configured to refresh sessions
 - Once complete, can delete `lib/supabase.ts` singleton
 
-## Expected Outcome
+## Progress Summary
+
+**✅ Completed (Phase 1 & 2 - 6/24 files):**
+- Core auth infrastructure working
+- Server-side auth functional
+- History loading with RLS
+- Images loading correctly
+- No more 401 errors on exercise page
+
+**Files Migrated:**
+1. hooks/useAuth.tsx
+2. hooks/useRole.tsx  
+3. lib/blind-assignment.ts (partial - getExerciseModels)
+4. components/header.tsx
+5. components/ChatBox.tsx
+6. app/exercise/[id]/ExerciseClient.tsx
+
+**Remaining:** 18 files (admin pages, API routes, utility pages)
 - ✅ Server components can read auth session
 - ✅ History loads automatically on exercise page
 - ✅ All RLS policies work server-side
