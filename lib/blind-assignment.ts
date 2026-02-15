@@ -118,7 +118,7 @@ export async function assignModelsToExercise(
  * @param exerciseId - The exercise ID
  * @returns Array of model assignments
  */
-export async function getExerciseModels(exerciseId: string) {
+export async function getExerciseModels(supabase: SupabaseClient, exerciseId: string) {
   try {
     const { data, error } = await supabase
       .from('exercise_models')

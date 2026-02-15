@@ -13,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Header } from '@/components/header'
 import { ChatBox } from '@/components/ChatBox'
 import { AlertCircle, Info, ArrowLeft, Users, Calendar, CheckCircle } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { getExerciseModels } from '@/lib/blind-assignment'
 import { useAuth } from '@/hooks/useAuth'
 import Link from 'next/link'
@@ -97,13 +97,14 @@ export default function ExerciseClient({ serverUserId, initialHistory }: Exercis
    */
   const fetchData = async () => {
     try {
+      const supabase = createClient()
       // Fetch exercise details
       const exerciseRes = await supabase.from('exercises').select('*').eq('id', params.id).single()
       if (exerciseRes.error) throw exerciseRes.error
       setExercise(exerciseRes.data)
 
       // Fetch models assigned to this exercise with blind names
-      const exerciseModels = await getExerciseModels(params.id as string)
+      const exerciseModels = await getExerciseModels(supabase, params.id as string)
       // Map to match AIModel interface
       const mappedModels = exerciseModels.map((em: any) => ({
         id: em.model_id,
@@ -164,6 +165,8 @@ export default function ExerciseClient({ serverUserId, initialHistory }: Exercis
 
   const handleJoin = async () => {
     if (!user) return
+    
+    const supabase = createClient()
     
     // Check if exercise is full
     if (exercise?.max_participants && participantCount >= exercise.max_participants) {
