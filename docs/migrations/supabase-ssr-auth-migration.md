@@ -16,9 +16,9 @@ Replace all imports of `@/lib/supabase` with:
 ## Migration Scope: 24 Files + Middleware
 
 ### Phase 1: Critical Auth Infrastructure (MUST DO FIRST)
-- [ ] `hooks/useAuth.tsx` - Core auth hook
-- [ ] `hooks/useRole.tsx` - Role checking
-- [ ] `lib/blind-assignment.ts` - Model assignment utility
+- [x] `hooks/useAuth.tsx` - Core auth hook ✅
+- [x] `hooks/useRole.tsx` - Role checking ✅
+- [ ] `lib/blind-assignment.ts` - Model assignment utility (DEFERRED - needs refactor to accept client param)
 
 ### Phase 2: Core Components (5 files)
 - [ ] `components/header.tsx`
