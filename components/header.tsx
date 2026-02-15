@@ -14,7 +14,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useRole } from '@/hooks/useRole'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 
 export function Header() {
   const [isDark, setIsDark] = useState(false)
@@ -36,6 +36,7 @@ export function Header() {
   useEffect(() => {
     if (!user) return setCredits(null)
     
+    const supabase = createClient()
     supabase
       .from('users')
       .select('credits')
@@ -49,6 +50,7 @@ export function Header() {
     if (!user) return setPendingInvites(0)
     
     const fetchInvites = async () => {
+      const supabase = createClient()
       const { data: userData } = await supabase
         .from('users')
         .select('id')
