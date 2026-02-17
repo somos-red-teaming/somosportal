@@ -84,6 +84,7 @@ export default function TeamsPage() {
   const handleSubmit = async () => {
     if (!form.name.trim()) return
 
+    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     
     // Get the users table id (not auth uid)
@@ -122,6 +123,7 @@ export default function TeamsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this team? Members will be removed.')) return
+    const supabase = createClient()
     await supabase.from('teams').delete().eq('id', id)
     fetchTeams()
   }
@@ -136,6 +138,7 @@ export default function TeamsPage() {
 
   const addMember = async (userId: string) => {
     if (!selectedTeam) return
+    const supabase = createClient()
     await supabase.from('team_members').insert({
       team_id: selectedTeam.id,
       user_id: userId,
@@ -147,6 +150,7 @@ export default function TeamsPage() {
   }
 
   const removeMember = async (memberId: string) => {
+    const supabase = createClient()
     await supabase.from('team_members').delete().eq('id', memberId)
     if (selectedTeam) {
       fetchMembers(selectedTeam.id)
@@ -156,6 +160,7 @@ export default function TeamsPage() {
 
   const toggleRole = async (member: TeamMember) => {
     const newRole = member.role === 'admin' ? 'member' : 'admin'
+    const supabase = createClient()
     await supabase.from('team_members').update({ role: newRole }).eq('id', member.id)
     if (selectedTeam) fetchMembers(selectedTeam.id)
   }

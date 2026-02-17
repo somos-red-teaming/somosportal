@@ -40,6 +40,7 @@ export default function FlagPackagesPage() {
   useEffect(() => { fetchPackages() }, [])
 
   const fetchPackages = async () => {
+    const supabase = createClient()
     const { data: pkgs } = await supabase.from('flag_packages').select('*').order('name')
     const { data: cats } = await supabase.from('flag_categories').select('*').order('sort_order')
     
@@ -100,6 +101,7 @@ export default function FlagPackagesPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this package? Exercises using it will fall back to default categories.')) return
+    const supabase = createClient()
     await supabase.from('flag_packages').delete().eq('id', id)
     fetchPackages()
   }

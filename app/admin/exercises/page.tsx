@@ -125,16 +125,19 @@ export default function AdminExercisesPage() {
   }, [page, search])
 
   const fetchFlagPackages = async () => {
+    const supabase = createClient()
     const { data } = await supabase.from('flag_packages').select('id, name').order('name')
     setFlagPackages(data || [])
   }
 
   const fetchTeams = async () => {
+    const supabase = createClient()
     const { data } = await supabase.from('teams').select('id, name').order('name')
     setTeams(data || [])
   }
 
   const fetchUsers = async () => {
+    const supabase = createClient()
     const { data } = await supabase.from('users').select('id, email, full_name').order('email')
     setUsers(data || [])
   }
@@ -160,6 +163,7 @@ export default function AdminExercisesPage() {
 
   const addInvite = async (userId: string) => {
     if (!inviteExercise) return
+    const supabase = createClient()
     await supabase.from('exercise_invites').insert({
       exercise_id: inviteExercise.id,
       user_id: userId
@@ -168,6 +172,7 @@ export default function AdminExercisesPage() {
   }
 
   const removeInvite = async (inviteId: string) => {
+    const supabase = createClient()
     await supabase.from('exercise_invites').delete().eq('id', inviteId)
     if (inviteExercise) fetchInvites(inviteExercise.id)
   }
@@ -198,6 +203,7 @@ export default function AdminExercisesPage() {
 
   const fetchExercises = async () => {
     setLoading(true)
+    const supabase = createClient()
     let query = supabase.from('exercises').select('*', { count: 'exact' })
     if (search) query = query.or(`title.ilike.%${search}%,category.ilike.%${search}%`)
 
@@ -353,6 +359,7 @@ export default function AdminExercisesPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this exercise?')) return
+    const supabase = createClient()
     await supabase.from('exercises').delete().eq('id', id)
     fetchExercises()
   }

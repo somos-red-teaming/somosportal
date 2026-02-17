@@ -103,6 +103,7 @@ export default function AdminFlagsPage() {
   }, [page, search, statusFilter, categoryFilter, exerciseFilter])
 
   const fetchExercises = async () => {
+    const supabase = createClient()
     const { data } = await supabase.from('exercises').select('id, title').order('title')
     setExercises(data || [])
   }
@@ -185,6 +186,7 @@ export default function AdminFlagsPage() {
   }
 
   const updateStatus = async (flagId: string, newStatus: string) => {
+    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     const { data: dbUser } = await supabase.from('users').select('id').eq('auth_user_id', user?.id).single()
     

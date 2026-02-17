@@ -55,12 +55,14 @@ export default function AdminUsersPage() {
 
   const toggleRole = async (userId: string, currentRole: string) => {
     const newRole = currentRole === 'admin' ? 'participant' : 'admin'
+    const supabase = createClient()
     await supabase.from('users').update({ role: newRole }).eq('id', userId)
     fetchUsers()
   }
 
   const toggleActive = async (userId: string, isActive: boolean) => {
     console.log('toggleActive called:', userId, isActive, '-> setting to:', !isActive)
+    const supabase = createClient()
     const { error } = await supabase.from('users').update({ is_active: !isActive }).eq('id', userId)
     if (error) console.error('Update error:', error)
     fetchUsers()
