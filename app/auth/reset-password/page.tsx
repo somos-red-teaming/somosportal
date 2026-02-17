@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Header } from '@/components/header'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { useState, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
@@ -54,6 +54,7 @@ function ResetPasswordForm() {
     setIsLoading(true)
     
     try {
+      const supabase = createClient()
       const { error } = await supabase.auth.updateUser({
         password: password
       })

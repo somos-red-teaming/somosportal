@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch'
 import { Header } from '@/components/header'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useAuth } from '@/hooks/useAuth'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useState, useEffect } from 'react'
 import { User, Save, AlertCircle, Mail } from 'lucide-react'
 
@@ -155,6 +155,7 @@ export default function ProfilePage() {
       setError(null)
       
       // Update password using Supabase auth
+      const supabase = createClient()
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       })

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 
 export default function TestDB() {
   const [connected, setConnected] = useState(false)
@@ -12,6 +12,7 @@ export default function TestDB() {
     async function testConnection() {
       try {
         console.log('Testing Supabase connection...')
+        const supabase = createClient()
         const { data, error } = await supabase.from('_test').select('*').limit(1)
         console.log('Response:', { data, error })
         
