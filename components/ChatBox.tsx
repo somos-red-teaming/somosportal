@@ -154,13 +154,12 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
   // Load flag categories for this exercise
   useEffect(() => {
     const loadFlagCategories = async () => {
-      const { data: exercise } = await import('@/lib/supabase').then(m => 
-        m.supabase.from('exercises').select('flag_package_id').eq('id', exerciseId).single()
-      )
+      const supabase = createClient()
+      const { data: exercise } = await supabase.from('exercises').select('flag_package_id').eq('id', exerciseId).single()
+      
       if (exercise?.flag_package_id) {
-        const { data: categories } = await import('@/lib/supabase').then(m =>
-          m.supabase.from('flag_categories').select('value, label').eq('package_id', exercise.flag_package_id).order('sort_order')
-        )
+        const { data: categories } = await supabase.from('flag_categories').select('value, label').eq('package_id', exercise.flag_package_id).order('sort_order')
+        
         if (categories?.length) {
           setFlagCategoryOptions(categories)
         }

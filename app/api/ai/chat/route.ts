@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get model config from database
-    const { data: model, error: modelError } = await supabase
+    const { data: model, error: modelError } = await supabaseAdmin
       .from('ai_models')
       .select('*')
       .eq('id', modelId)
