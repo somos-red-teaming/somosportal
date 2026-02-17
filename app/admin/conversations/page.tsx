@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { ArrowLeft, Search, ChevronLeft, ChevronRight, MessageSquare, Download, Eye, X, User, Bot, FileJson, FileSpreadsheet, Calendar } from 'lucide-react'
 import Link from 'next/link'
@@ -19,6 +19,8 @@ function ImageFromStorage({ path }: { path: string }) {
   const [url, setUrl] = useState<string | null>(null)
   useEffect(() => {
     const load = async () => {
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
       const { data } = await supabase.storage.from(path.split('/')[0]).createSignedUrl(path.split('/').slice(1).join('/'), 3600)
       if (data?.signedUrl) setUrl(data.signedUrl)
     }
@@ -81,6 +83,7 @@ export default function AdminConversationsPage() {
   }, [page, search, exerciseFilter, dateFrom, dateTo])
 
   const fetchExercises = async () => {
+    const supabase = createClient()
     const { data } = await supabase.from('exercises').select('id, title').order('title')
     setExercises(data || [])
   }

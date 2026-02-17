@@ -7,7 +7,7 @@ import { Header } from '@/components/header'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { useAuth } from '@/hooks/useAuth'
 import { useRole } from '@/hooks/useRole'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { User, Activity, Flag, Trophy, Shield } from 'lucide-react'
 
@@ -28,6 +28,7 @@ export default function DashboardPage() {
     if (!user) return
 
     const fetchStats = async () => {
+      const supabase = createClient()
       const { data: userData } = await supabase
         .from('users')
         .select('id')

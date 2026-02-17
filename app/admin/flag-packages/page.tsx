@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Plus, Pencil, Trash2, Package, Tag } from 'lucide-react'
 import Link from 'next/link'
 

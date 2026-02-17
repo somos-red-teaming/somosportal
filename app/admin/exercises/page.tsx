@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
 import { RichTextEditor } from '@/components/RichTextEditor'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { previewBlindAssignments, assignModelsToExercise } from '@/lib/blind-assignment'
 import { ArrowLeft, Plus, Pencil, Trash2, Search, ChevronLeft, ChevronRight, Users, Calendar, UserPlus, X, FileText, Shield, Brain, Eye, Lock, AlertTriangle, Zap, Target, MessageSquare, Bot, Sparkles } from 'lucide-react'
 import Link from 'next/link'

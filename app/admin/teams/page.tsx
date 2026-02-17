@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Plus, Pencil, Trash2, Users, UserPlus, X } from 'lucide-react'
 import Link from 'next/link'
 

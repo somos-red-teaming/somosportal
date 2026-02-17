@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Users, FileText, Flag, Activity, Bot, Code, TestTube, Download, MessageSquare, UsersRound } from 'lucide-react'
 
@@ -21,6 +21,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const fetchStats = async () => {
+      const supabase = createClient()
       const [users, exercises, flags, interactions] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact', head: true }),
         supabase.from('exercises').select('id', { count: 'exact', head: true }),

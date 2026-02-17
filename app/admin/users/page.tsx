@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
