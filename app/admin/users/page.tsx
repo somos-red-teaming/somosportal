@@ -73,6 +73,7 @@ export default function AdminUsersPage() {
     const user = users.find(u => u.id === userId)
     if (!user) return
     const newCredits = (user.credits ?? 0) + amount
+    const supabase = createClient()
     await supabase.from('users').update({ credits: newCredits }).eq('id', userId)
     fetchUsers()
   }
