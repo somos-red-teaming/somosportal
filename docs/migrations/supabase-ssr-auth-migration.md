@@ -25,46 +25,46 @@ Replace all imports of `@/lib/supabase` with:
 - [x] `components/ChatBox.tsx` ✅
 - [x] `app/exercise/[id]/ExerciseClient.tsx` ✅
 - [x] `app/exercises/page.tsx` ✅
-- [ ] `app/dashboard/page.tsx`
+- [x] `app/dashboard/page.tsx` ✅
 
-### Phase 3: Admin Pages (7 files)
-- [ ] `app/admin/page.tsx`
-- [ ] `app/admin/teams/page.tsx`
-- [ ] `app/admin/users/page.tsx`
-- [ ] `app/admin/models/page.tsx`
-- [ ] `app/admin/conversations/page.tsx`
-- [ ] `app/admin/flags/page.tsx`
-- [ ] `app/admin/flag-packages/page.tsx`
-- [ ] `app/admin/exercises/page.tsx`
+### Phase 3: Admin Pages (8 files)
+- [x] `app/admin/page.tsx` ✅
+- [x] `app/admin/teams/page.tsx` ✅
+- [x] `app/admin/users/page.tsx` ✅
+- [x] `app/admin/models/page.tsx` ✅
+- [x] `app/admin/conversations/page.tsx` ✅
+- [x] `app/admin/flags/page.tsx` ✅
+- [x] `app/admin/flag-packages/page.tsx` ✅
+- [x] `app/admin/exercises/page.tsx` ✅
 
 ### Phase 4: API Routes (3 files)
-- [ ] `app/api/ai/chat/route.ts`
-- [ ] `app/api/models/route.ts`
-- [ ] `app/api/ai/test/route.ts`
+- [x] `app/api/ai/chat/route.ts` ✅
+- [x] `app/api/models/route.ts` ✅
+- [x] `app/api/ai/test/route.ts` ✅
 
 ### Phase 5: Auth & Utility Pages (5 files)
-- [ ] `app/profile/page.tsx`
-- [ ] `app/auth/callback/page.tsx`
-- [ ] `app/auth/reset-password/page.tsx`
-- [ ] `app/api-tester/page.tsx`
-- [ ] `app/test-db/page.tsx`
+- [x] `app/profile/page.tsx` ✅
+- [x] `app/auth/callback/page.tsx` ✅
+- [x] `app/auth/reset-password/page.tsx` ✅
+- [x] `app/api-tester/page.tsx` ✅
+- [x] `app/test-db/page.tsx` ✅
 
 ### Phase 6: Middleware
-- [ ] Verify `middleware.ts` matcher covers all routes (already done)
-- [ ] Ensure cookies are properly refreshed
+- [x] Verify `middleware.ts` matcher covers all routes (already done) ✅
+- [x] Ensure cookies are properly refreshed ✅
 
 ## Testing Checklist
 After each phase:
-- [ ] Login works
-- [ ] Logout works
-- [ ] Session persists on page reload
-- [ ] Protected routes still protected
-- [ ] No console errors
+- [x] Login works ✅
+- [x] Logout works ✅
+- [x] Session persists on page reload ✅
+- [x] Protected routes still protected ✅
+- [x] No console errors ✅
 
 Final test:
-- [ ] Server component can read user session
-- [ ] History loads on exercise page
-- [ ] All existing features still work
+- [x] Server component can read user session ✅
+- [x] History loads on exercise page ✅
+- [x] All existing features still work ✅
 
 ## Rollback Plan
 If migration fails:
