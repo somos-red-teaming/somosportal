@@ -53,6 +53,7 @@ export default function TeamsPage() {
   }, [])
 
   const fetchTeams = async () => {
+    const supabase = createClient()
     const { data } = await supabase
       .from('teams')
       .select('*, team_members(count)')
@@ -65,6 +66,7 @@ export default function TeamsPage() {
   }
 
   const fetchUsers = async () => {
+    const supabase = createClient()
     const { data } = await supabase
       .from('users')
       .select('id, email, full_name')
@@ -73,6 +75,7 @@ export default function TeamsPage() {
   }
 
   const fetchMembers = async (teamId: string) => {
+    const supabase = createClient()
     const { data } = await supabase
       .from('team_members')
       .select('*, user:users(email, full_name)')
