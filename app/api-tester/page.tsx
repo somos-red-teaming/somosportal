@@ -41,6 +41,7 @@ export default function ApiTesterPage() {
    * Fetches active AI models from the database
    */
   const fetchModels = async () => {
+    const supabase = createClient()
     const { data } = await supabase
       .from('ai_models')
       .select('id, name, provider, is_active')
