@@ -314,6 +314,7 @@ export default function AdminExercisesPage() {
   }
 
   const handleEdit = async (ex: Exercise) => {
+    const supabase = createClient()
     // Fetch assigned models and temperature overrides from junction table
     const { data: exerciseModels } = await supabase
       .from('exercise_models')
