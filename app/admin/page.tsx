@@ -46,40 +46,40 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
-            <Card>
+            <Card className="bg-[#B5D3C7] border-[#B5D3C7]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-black">Total Users</CardTitle>
+                <Users className="h-4 w-4 text-black/70" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.users}</div>
+                <div className="text-2xl font-bold text-black">{stats.users}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-[#FABBA3] border-[#FABBA3]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Exercises</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-black">Exercises</CardTitle>
+                <FileText className="h-4 w-4 text-black/70" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.exercises}</div>
+                <div className="text-2xl font-bold text-black">{stats.exercises}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-[#F3D59D] border-[#F3D59D]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Flags</CardTitle>
-                <Flag className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-black">Flags</CardTitle>
+                <Flag className="h-4 w-4 text-black/70" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.flags}</div>
+                <div className="text-2xl font-bold text-black">{stats.flags}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="bg-[#D5C1C3] border-[#D5C1C3]">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Interactions</CardTitle>
-                <Activity className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium text-black">Interactions</CardTitle>
+                <Activity className="h-4 w-4 text-black/70" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{stats.interactions}</div>
+                <div className="text-2xl font-bold text-black">{stats.interactions}</div>
               </CardContent>
             </Card>
           </div>
