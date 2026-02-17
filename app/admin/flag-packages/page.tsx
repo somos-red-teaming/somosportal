@@ -80,6 +80,7 @@ export default function FlagPackagesPage() {
   const handleSave = async () => {
     if (!form.name || categories.length === 0) return
 
+    const supabase = createClient()
     if (editingPackage) {
       await supabase.from('flag_packages').update({ name: form.name, description: form.description }).eq('id', editingPackage.id)
       await supabase.from('flag_categories').delete().eq('package_id', editingPackage.id)
