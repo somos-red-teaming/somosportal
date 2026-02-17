@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AIProviderFactory } from '@/lib/ai-providers/factory'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 
 /**
  * POST /api/ai/test
@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get model config from database
+    const supabase = await createClient()
     const { data: model, error } = await supabase
       .from('ai_models')
       .select('*')

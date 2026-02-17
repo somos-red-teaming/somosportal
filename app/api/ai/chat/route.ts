@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { AIProviderFactory } from '@/lib/ai-providers/factory'
-import { supabase } from '@/lib/supabase'
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 function getSupabaseAdmin() {
-  return createClient(
+  return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
