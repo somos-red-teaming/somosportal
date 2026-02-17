@@ -82,6 +82,7 @@ export default function ProfilePage() {
       
       console.log('Loading profile for user:', user?.id)
       
+      const supabase = createClient()
       // Get user data
       const { data: userData, error: userError } = await supabase
         .from('users')
