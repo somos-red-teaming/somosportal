@@ -13,13 +13,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { TimerDisplay } from './TimerDisplay'
+import { createClient } from '@/lib/supabase/client'
 
 // Component to load images from private storage with signed URL
 function ImageFromStorage({ path }: { path: string }) {
   const [url, setUrl] = useState<string | null>(null)
   useEffect(() => {
     const load = async () => {
-      const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
       const { data } = await supabase.storage.from(path.split('/')[0]).createSignedUrl(path.split('/').slice(1).join('/'), 3600)
       if (data?.signedUrl) setUrl(data.signedUrl)

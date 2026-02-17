@@ -90,6 +90,7 @@ export default function AdminConversationsPage() {
 
   const fetchInteractions = async () => {
     setLoading(true)
+    const supabase = createClient()
     let query = supabase
       .from('interactions')
       .select(`

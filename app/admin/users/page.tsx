@@ -36,6 +36,7 @@ export default function AdminUsersPage() {
 
   const fetchUsers = async () => {
     setLoading(true)
+    const supabase = createClient()
     let query = supabase
       .from('users')
       .select('id, email, full_name, role, is_active, credits, created_at', { count: 'exact' })
