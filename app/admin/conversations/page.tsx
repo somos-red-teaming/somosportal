@@ -19,7 +19,6 @@ function ImageFromStorage({ path }: { path: string }) {
   const [url, setUrl] = useState<string | null>(null)
   useEffect(() => {
     const load = async () => {
-      const { createClient } = await import('@/lib/supabase/client')
       const supabase = createClient()
       const { data } = await supabase.storage.from(path.split('/')[0]).createSignedUrl(path.split('/').slice(1).join('/'), 3600)
       if (data?.signedUrl) setUrl(data.signedUrl)

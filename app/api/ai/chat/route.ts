@@ -12,6 +12,11 @@ function getSupabaseAdmin() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Use service role client for all operations in this route:
+    // - Reading model configs (public data)
+    // - Deducting credits (requires admin access)
+    // - Saving interactions (bypasses RLS for system operations)
+    // User authentication is verified via userId parameter from client
     const supabaseAdmin = getSupabaseAdmin()
     const { exerciseId, modelId, prompt, conversationId, history, userId } = await request.json()
 
