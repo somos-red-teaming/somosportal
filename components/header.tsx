@@ -93,10 +93,11 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-            <span className="text-lg font-bold text-primary-foreground">S</span>
-          </div>
-          <span className="text-xl font-bold">SOMOS Civic Lab</span>
+          <img 
+            src={isDark ? "/logo-inverted.png" : "/logo.png"} 
+            alt="SOMOS Logo" 
+            className="h-8 w-auto"
+          />
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">
