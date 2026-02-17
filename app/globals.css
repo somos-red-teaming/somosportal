@@ -4,6 +4,31 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* SOMOS Brand Fonts */
+@font-face {
+  font-family: 'Acid Grotesk';
+  src: url('/fonts/AcidGrotesk-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bespoke Slab';
+  src: url('/fonts/bespoke-slab-font-family/BespokeSlab-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bespoke Slab';
+  src: url('/fonts/bespoke-slab-font-family/BespokeSlab-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Prevent zoom and make site app-like on mobile */
 @media (max-width: 768px) {
   html {
@@ -162,5 +187,10 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Bespoke Slab', serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Acid Grotesk', sans-serif;
+    font-weight: 700;
   }
 }
