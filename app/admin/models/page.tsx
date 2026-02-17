@@ -102,6 +102,7 @@ export default function AdminModelsPage() {
 
   const fetchModels = async () => {
     setLoading(true)
+    const supabase = createClient()
     const { data } = await supabase
       .from('ai_models')
       .select('*')
@@ -115,6 +116,7 @@ export default function AdminModelsPage() {
    * Includes configuration for custom providers (endpoint, apiKeyEnv)
    */
   const handleSave = async () => {
+    const supabase = createClient()
     const modelData = {
       ...form,
       capabilities: form.capabilities.length > 0 ? form.capabilities : ['text_generation'],
@@ -158,6 +160,7 @@ export default function AdminModelsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this AI model? This cannot be undone.')) return
+    const supabase = createClient()
     await supabase.from('ai_models').delete().eq('id', id)
     fetchModels()
   }
