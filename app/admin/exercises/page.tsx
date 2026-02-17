@@ -182,6 +182,7 @@ export default function AdminExercisesPage() {
    * Gets active models with full details, filtering out test entries
    */
   const fetchModels = async () => {
+    const supabase = createClient()
     const { data } = await supabase
       .from('ai_models')
       .select('id, name, display_name, provider, temperature')
