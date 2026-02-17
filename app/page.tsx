@@ -55,57 +55,57 @@ export default function Home() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
+            <Card className="bg-[#B5D3C7] border-[#B5D3C7]">
               <CardHeader>
-                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Shield className="h-6 w-6 text-primary" />
+                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-black/10">
+                  <Shield className="h-6 w-6 text-black" />
                 </div>
-                <CardTitle>Blind Model Testing</CardTitle>
+                <CardTitle className="text-black">Blind Model Testing</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
+                <CardDescription className="text-black/70">
                   Test AI models without knowing their identity to ensure unbiased, objective safety assessments
                 </CardDescription>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-[#FABBA3] border-[#FABBA3]">
               <CardHeader>
-                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Users className="h-6 w-6 text-primary" />
+                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-black/10">
+                  <Users className="h-6 w-6 text-black" />
                 </div>
-                <CardTitle>Community Participation</CardTitle>
+                <CardTitle className="text-black">Community Participation</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
+                <CardDescription className="text-black/70">
                   Collaborate with diverse participants to surface risks that automated testing might miss
                 </CardDescription>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-[#F3D59D] border-[#F3D59D]">
               <CardHeader>
-                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <AlertTriangle className="h-6 w-6 text-primary" />
+                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-black/10">
+                  <AlertTriangle className="h-6 w-6 text-black" />
                 </div>
-                <CardTitle>Identify AI Risks</CardTitle>
+                <CardTitle className="text-black">Identify AI Risks</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
+                <CardDescription className="text-black/70">
                   Flag harmful content, misinformation, bias, and other safety concerns through structured exercises
                 </CardDescription>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="bg-[#D5C1C3] border-[#D5C1C3]">
               <CardHeader>
-                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <BarChart3 className="h-6 w-6 text-primary" />
+                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-black/10">
+                  <BarChart3 className="h-6 w-6 text-black" />
                 </div>
-                <CardTitle>Comprehensive Analysis</CardTitle>
+                <CardTitle className="text-black">Comprehensive Analysis</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription>
+                <CardDescription className="text-black/70">
                   Contribute to detailed reports that help improve AI safety standards and governance policies
                 </CardDescription>
               </CardContent>
