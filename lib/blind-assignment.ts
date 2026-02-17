@@ -1,4 +1,5 @@
-import { supabase } from './supabase'
+import { createClient } from './supabase/client'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Blind names for models (in order of assignment)
 const BLIND_NAMES = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta', 'Theta']
@@ -11,6 +12,7 @@ const BLIND_NAMES = ['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta', 'Eta'
  */
 export async function getBlindName(exerciseId: string, modelId: string): Promise<string | null> {
   try {
+    const supabase = createClient()
     const { data, error } = await supabase
       .from('exercise_models')
       .select('blind_name')
@@ -37,6 +39,7 @@ export async function getBlindName(exerciseId: string, modelId: string): Promise
  */
 export async function getModelConfig(exerciseId: string, blindName: string) {
   try {
+    const supabase = createClient()
     const { data, error } = await supabase
       .from('exercise_models')
       .select(`
@@ -83,6 +86,7 @@ export async function assignModelsToExercise(
   temperatureOverrides?: Record<string, number | null>
 ) {
   try {
+    const supabase = createClient()
     // First, clear existing assignments for this exercise
     await supabase
       .from('exercise_models')
