@@ -1,34 +1,34 @@
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Header } from '@/components/header'
-import { Shield, Users, AlertTriangle, BarChart3, CheckCircle2, ArrowRight } from 'lucide-react'
+import { EyeOff, Users, Flag, BarChart3, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 md:py-32">
-        <div className="mx-auto max-w-4xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-muted px-4 py-2 text-sm">
+
+      {/* Hero Section — split layout: text left, illustration right */}
+      <section className="container mx-auto grid grid-cols-1 items-center gap-12 px-4 py-20 md:grid-cols-2 md:gap-16 md:py-24 lg:py-32">
+        <div className="flex flex-col gap-6">
+          <div className="inline-flex w-fit items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
             <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-700 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-700"></span>
             </span>
-            <span className="text-muted-foreground">Public Beta Now Live</span>
+            Public Beta Now Live
           </div>
-          
-          <h1 className="mb-6 text-4xl font-bold tracking-tight text-balance md:text-6xl lg:text-7xl">
-            SOMOS Civic Lab
+
+          <h1 className="text-4xl font-bold tracking-tight md:text-5xl lg:text-6xl">
+            Help Shape the Future of AI Governance
           </h1>
-          
-          <p className="mb-8 text-xl text-muted-foreground text-balance md:text-2xl">
-            Democratizing AI governance through structured public participation in red teaming exercises
+
+          <p className="max-w-xl font-serif text-lg text-muted-foreground md:text-xl">
+            Join a global community testing AI models for safety, bias, and accountability. Your voice matters in building trustworthy technology.
           </p>
-          
-          <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+
+          <div className="flex flex-col gap-4 sm:flex-row">
             <Button size="lg" asChild className="w-full sm:w-auto">
               <Link href="/register">
                 Start Testing AI Models
@@ -40,167 +40,136 @@ export default function Home() {
             </Button>
           </div>
         </div>
+
+        <div className="hidden items-center justify-center md:flex">
+          <Image
+            src="/illustrations/grafismo-5-green.svg"
+            alt="SOMOS grafismo illustration"
+            width={400}
+            height={400}
+            className="h-auto w-full max-w-[400px]"
+            aria-hidden="true"
+            priority
+          />
+        </div>
       </section>
 
-      {/* Benefits Section */}
-      <section id="learn-more" className="border-t border-border bg-muted/50 py-20">
+      {/* Why Participate — Color-coded feature cards */}
+      <section id="learn-more" className="border-t border-border bg-card py-20">
         <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-3xl text-center mb-16">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">
-              Why Participate in AI Red Teaming?
+          <div className="mb-12">
+            <h2 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">
+              Why Participate?
             </h2>
-            <p className="text-lg text-muted-foreground text-balance">
-              Join a community of civic-minded individuals helping to identify and mitigate AI risks before they impact society
+            <p className="font-serif text-lg text-muted-foreground">
+              Be part of the movement to make AI safer and more accountable.
             </p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader>
-                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Shield className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle>Blind Model Testing</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Test AI models without knowing their identity to ensure unbiased, objective safety assessments
-                </CardDescription>
-              </CardContent>
-            </Card>
+            {/* Gold card */}
+            <div className="flex flex-col gap-4 rounded-xl border border-border bg-primary p-7 dark:bg-[#3D3520]">
+              <EyeOff className="h-7 w-7" />
+              <h3 className="text-lg font-bold">Blind Testing</h3>
+              <p className="font-serif text-sm leading-relaxed opacity-85">
+                Test AI models without knowing which one you&apos;re interacting with, removing bias from evaluations.
+              </p>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <Users className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle>Community Participation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Collaborate with diverse participants to surface risks that automated testing might miss
-                </CardDescription>
-              </CardContent>
-            </Card>
+            {/* Sage card */}
+            <div className="flex flex-col gap-4 rounded-xl border border-border bg-accent p-7">
+              <Users className="h-7 w-7" />
+              <h3 className="text-lg font-bold">Community Driven</h3>
+              <p className="font-serif text-sm leading-relaxed opacity-85">
+                Join deliberation spaces where diverse voices shape the standards for AI accountability.
+              </p>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <AlertTriangle className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle>Identify AI Risks</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Flag harmful content, misinformation, bias, and other safety concerns through structured exercises
-                </CardDescription>
-              </CardContent>
-            </Card>
+            {/* Peach card */}
+            <div className="flex flex-col gap-4 rounded-xl border border-border bg-peach p-7">
+              <Flag className="h-7 w-7" />
+              <h3 className="text-lg font-bold">Flag Risks</h3>
+              <p className="font-serif text-sm leading-relaxed opacity-85">
+                Report harmful content, misinformation, and bias with structured guidelines that lead to real change.
+              </p>
+            </div>
 
-            <Card>
-              <CardHeader>
-                <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-                  <BarChart3 className="h-6 w-6 text-primary" />
-                </div>
-                <CardTitle>Comprehensive Analysis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CardDescription>
-                  Contribute to detailed reports that help improve AI safety standards and governance policies
-                </CardDescription>
-              </CardContent>
-            </Card>
+            {/* Mauve card */}
+            <div className="flex flex-col gap-4 rounded-xl border border-border bg-mauve p-7">
+              <BarChart3 className="h-7 w-7" />
+              <h3 className="text-lg font-bold">Data-Driven Analysis</h3>
+              <p className="font-serif text-sm leading-relaxed opacity-85">
+                Contribute to evidence-based research that informs policy and drives meaningful AI safety improvements.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works Section */}
+      {/* How It Works — Steps with large gold numbers */}
       <section className="py-20">
         <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-3xl text-center mb-16">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">
+          <div className="mb-12">
+            <h2 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">
               How It Works
             </h2>
-            <p className="text-lg text-muted-foreground text-balance">
-              Participate in structured red teaming exercises designed by experts
+            <p className="font-serif text-lg text-muted-foreground">
+              Four simple steps to start contributing to AI governance.
             </p>
           </div>
 
-          <div className="mx-auto max-w-4xl">
-            <div className="grid gap-8 md:gap-12">
-              <div className="flex gap-6">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
-                  1
-                </div>
-                <div>
-                  <h3 className="mb-2 text-xl font-semibold">Choose an Exercise</h3>
-                  <p className="text-muted-foreground">
-                    Browse active exercises covering topics like election integrity, bias detection, climate information, and public services
-                  </p>
-                </div>
-              </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-7">
+              <span className="text-5xl font-bold leading-none text-primary">01</span>
+              <h3 className="text-lg font-semibold">Choose an Exercise</h3>
+              <p className="font-serif text-sm leading-relaxed text-muted-foreground">
+                Browse active exercises covering topics like election integrity, bias detection, and climate information.
+              </p>
+            </div>
 
-              <div className="flex gap-6">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
-                  2
-                </div>
-                <div>
-                  <h3 className="mb-2 text-xl font-semibold">Test AI Models Blindly</h3>
-                  <p className="text-muted-foreground">
-                    Interact with anonymized AI models and follow structured testing guidelines to identify potential issues
-                  </p>
-                </div>
-              </div>
+            <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-7">
+              <span className="text-5xl font-bold leading-none text-primary">02</span>
+              <h3 className="text-lg font-semibold">Test AI Models Blindly</h3>
+              <p className="font-serif text-sm leading-relaxed text-muted-foreground">
+                Interact with anonymized AI models and follow structured testing guidelines to identify issues.
+              </p>
+            </div>
 
-              <div className="flex gap-6">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
-                  3
-                </div>
-                <div>
-                  <h3 className="mb-2 text-xl font-semibold">Flag Harms</h3>
-                  <p className="text-muted-foreground">
-                    Capture findings including harmful content, misinformation, bias, or other concerns with detailed annotations and severity ratings
-                  </p>
-                </div>
-              </div>
+            <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-7">
+              <span className="text-5xl font-bold leading-none text-primary">03</span>
+              <h3 className="text-lg font-semibold">Flag Issues</h3>
+              <p className="font-serif text-sm leading-relaxed text-muted-foreground">
+                Report harmful content, misinformation, bias, or other concerns with detailed annotations.
+              </p>
+            </div>
 
-              <div className="flex gap-6">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
-                  4
-                </div>
-                <div>
-                  <h3 className="mb-2 text-xl font-semibold">Contribute to AI Safety</h3>
-                  <p className="text-muted-foreground">
-                    Your findings contribute to comprehensive reports that inform AI safety standards and policy decisions
-                  </p>
-                </div>
-              </div>
+            <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-7">
+              <span className="text-5xl font-bold leading-none text-primary">04</span>
+              <h3 className="text-lg font-semibold">See the Impact</h3>
+              <p className="font-serif text-sm leading-relaxed text-muted-foreground">
+                Track how your contributions feed into research and policy recommendations for better AI.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="border-t border-border bg-muted/50 py-20">
+      <section className="border-t border-border py-20">
         <div className="container mx-auto px-4">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-4xl">
-              Ready to Make AI Safer?
+          <div className="mx-auto flex max-w-3xl flex-col items-center gap-6 text-center">
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+              Ready to Make AI More Accountable?
             </h2>
-            <p className="mb-8 text-lg text-muted-foreground text-balance">
-              Join thousands of participants helping to build trustworthy AI systems through civic engagement
+            <p className="max-w-xl font-serif text-lg text-muted-foreground">
+              Join thousands of citizens, researchers, and policymakers working together to ensure AI serves everyone fairly and transparently.
             </p>
-            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Button size="lg" asChild>
-                <Link href="/register">
-                  Sign Up & Start Testing
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/exercises">View Active Exercises</Link>
-              </Button>
-            </div>
+            <Button size="lg" asChild>
+              <Link href="/register">
+                Join the Platform
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -216,41 +185,41 @@ export default function Home() {
                 </svg>
                 <span className="font-bold">SOMOS Civic Lab</span>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="font-serif text-sm text-muted-foreground">
                 Democratizing AI governance through public participation
               </p>
             </div>
-            
+
             <div>
               <h4 className="mb-4 font-semibold">Platform</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/exercises" className="hover:text-foreground transition-colors">Exercises</Link></li>
-                <li><Link href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link></li>
-                <li><Link href="/about" className="hover:text-foreground transition-colors">About</Link></li>
+              <ul className="space-y-2 font-serif text-sm text-muted-foreground">
+                <li><Link href="/exercises" className="transition-colors hover:text-foreground">Exercises</Link></li>
+                <li><Link href="/dashboard" className="transition-colors hover:text-foreground">Dashboard</Link></li>
+                <li><Link href="/about" className="transition-colors hover:text-foreground">About</Link></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="mb-4 font-semibold">Resources</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/docs" className="hover:text-foreground transition-colors">Documentation</Link></li>
-                <li><Link href="/guides" className="hover:text-foreground transition-colors">Guides</Link></li>
-                <li><Link href="/faq" className="hover:text-foreground transition-colors">FAQ</Link></li>
+              <ul className="space-y-2 font-serif text-sm text-muted-foreground">
+                <li><Link href="/docs" className="transition-colors hover:text-foreground">Documentation</Link></li>
+                <li><Link href="/guides" className="transition-colors hover:text-foreground">Guides</Link></li>
+                <li><Link href="/faq" className="transition-colors hover:text-foreground">FAQ</Link></li>
               </ul>
             </div>
-            
+
             <div>
               <h4 className="mb-4 font-semibold">Legal</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link></li>
-                <li><Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link></li>
-                <li><Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
+              <ul className="space-y-2 font-serif text-sm text-muted-foreground">
+                <li><Link href="/privacy" className="transition-colors hover:text-foreground">Privacy</Link></li>
+                <li><Link href="/terms" className="transition-colors hover:text-foreground">Terms</Link></li>
+                <li><Link href="/contact" className="transition-colors hover:text-foreground">Contact</Link></li>
               </ul>
             </div>
           </div>
-          
-          <div className="mt-12 border-t border-border pt-8 text-center text-sm text-muted-foreground">
-            <p>© 2026 SOMOS Civic Lab. All rights reserved.</p>
+
+          <div className="mt-12 border-t border-border pt-8 text-center font-serif text-sm text-muted-foreground">
+            <p>&copy; 2026 SOMOS Civic Lab. All rights reserved.</p>
           </div>
         </div>
       </footer>
