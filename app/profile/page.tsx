@@ -224,6 +224,7 @@ export default function ProfilePage() {
     setIsSaving(true)
 
     try {
+      const supabase = createClient()
       // Get or create user record
       let { data: userData, error: userError } = await supabase
         .from('users')
