@@ -254,6 +254,7 @@ export default function AdminExercisesPage() {
     
     setSaving(true)
     
+    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
