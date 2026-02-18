@@ -20,14 +20,21 @@ const iconMap: Record<string, React.ComponentType<{className?: string}>> = {
 }
 
 const colorClasses: Record<string, string> = {
-  blue: 'bg-blue-500',
-  red: 'bg-red-500',
-  green: 'bg-green-500',
-  purple: 'bg-purple-500',
-  orange: 'bg-orange-500',
-  pink: 'bg-pink-500',
-  cyan: 'bg-cyan-500',
-  yellow: 'bg-yellow-500',
+  gold: 'bg-primary',
+  sage: 'bg-accent',
+  peach: 'bg-peach',
+  mauve: 'bg-mauve',
+  taupe: 'bg-secondary',
+  warmgray: 'bg-border',
+  // Legacy fallbacks for existing exercises
+  blue: 'bg-primary',
+  red: 'bg-peach',
+  green: 'bg-accent',
+  purple: 'bg-mauve',
+  orange: 'bg-primary',
+  pink: 'bg-peach',
+  cyan: 'bg-accent',
+  yellow: 'bg-primary',
 }
 
 interface Exercise {
