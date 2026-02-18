@@ -43,80 +43,81 @@
 }
 
 :root {
-  /* Updated color palette for SOMOS Civic Lab - professional blue accent with clean whites */
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.15 0 0);
-  --card: oklch(0.99 0 0);
-  --card-foreground: oklch(0.15 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0 0);
-  --primary: oklch(0.55 0.22 252); /* Blue #2563eb */
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.96 0 0);
-  --secondary-foreground: oklch(0.15 0 0);
-  --muted: oklch(0.96 0.005 252);
-  --muted-foreground: oklch(0.52 0.015 252);
-  --accent: oklch(0.95 0.01 252);
-  --accent-foreground: oklch(0.15 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.92 0 0);
-  --input: oklch(0.92 0 0);
-  --ring: oklch(0.55 0.22 252);
-  --chart-1: oklch(0.55 0.22 252);
-  --chart-2: oklch(0.45 0.15 210);
-  --chart-3: oklch(0.65 0.18 240);
-  --chart-4: oklch(0.50 0.20 260);
-  --chart-5: oklch(0.60 0.16 230);
-  --radius: 0.5rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.15 0 0);
-  --sidebar-primary: oklch(0.55 0.22 252);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.96 0 0);
-  --sidebar-accent-foreground: oklch(0.15 0 0);
-  --sidebar-border: oklch(0.92 0 0);
-  --sidebar-ring: oklch(0.55 0.22 252);
+  /* SOMOS Civic Lab — New brand identity by Estúdio Sarau */
+  --background: #EEEDE3;
+  --foreground: #111111;
+  --card: #FFFFFF;
+  --card-foreground: #111111;
+  --popover: #FFFFFF;
+  --popover-foreground: #111111;
+  --primary: #F3D59D;
+  --primary-foreground: #111111;
+  --secondary: #C8BAA2;
+  --secondary-foreground: #111111;
+  --muted: #E7E8E5;
+  --muted-foreground: #5A5A56;
+  --accent: #B5D3C7;
+  --accent-foreground: #111111;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #D6D3CF;
+  --input: #D6D3CF;
+  --ring: #F3D59D;
+  --chart-1: #F3D59D;
+  --chart-2: #FABBA3;
+  --chart-3: #B5D3C7;
+  --chart-4: #D5C1C3;
+  --chart-5: #C8BAA2;
+  --radius: 0.625rem;
+  --sidebar: #EEEDE3;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #F3D59D;
+  --sidebar-primary-foreground: #111111;
+  --sidebar-accent: #E7E8E5;
+  --sidebar-accent-foreground: #111111;
+  --sidebar-border: #D6D3CF;
+  --sidebar-ring: #F3D59D;
 }
 
 .dark {
-  /* Dark mode optimized for civic platform - slate backgrounds with blue accents */
-  --background: oklch(0.15 0.005 252);
-  --foreground: oklch(0.98 0 0);
-  --card: oklch(0.18 0.008 252);
-  --card-foreground: oklch(0.98 0 0);
-  --popover: oklch(0.16 0.006 252);
-  --popover-foreground: oklch(0.98 0 0);
-  --primary: oklch(0.60 0.24 252);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.24 0.01 252);
-  --secondary-foreground: oklch(0.98 0 0);
-  --muted: oklch(0.24 0.01 252);
-  --muted-foreground: oklch(0.65 0.015 252);
-  --accent: oklch(0.26 0.012 252);
-  --accent-foreground: oklch(0.98 0 0);
-  --destructive: oklch(0.50 0.20 27);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.26 0.012 252);
-  --input: oklch(0.26 0.012 252);
-  --ring: oklch(0.60 0.24 252);
-  --chart-1: oklch(0.60 0.24 252);
-  --chart-2: oklch(0.50 0.18 210);
-  --chart-3: oklch(0.70 0.20 240);
-  --chart-4: oklch(0.55 0.22 260);
-  --chart-5: oklch(0.65 0.18 230);
-  --sidebar: oklch(0.16 0.006 252);
-  --sidebar-foreground: oklch(0.98 0 0);
-  --sidebar-primary: oklch(0.60 0.24 252);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.24 0.01 252);
-  --sidebar-accent-foreground: oklch(0.98 0 0);
-  --sidebar-border: oklch(0.26 0.012 252);
-  --sidebar-ring: oklch(0.60 0.24 252);
+  /* SOMOS dark mode — warm near-blacks preserving brand warmth */
+  --background: #141413;
+  --foreground: #EEEDE3;
+  --card: #1E1E1C;
+  --card-foreground: #EEEDE3;
+  --popover: #1E1E1C;
+  --popover-foreground: #EEEDE3;
+  --primary: #F3D59D;
+  --primary-foreground: #111111;
+  --secondary: #3D3830;
+  --secondary-foreground: #EEEDE3;
+  --muted: #2A2A28;
+  --muted-foreground: #A0A09A;
+  --accent: #2A3B34;
+  --accent-foreground: #EEEDE3;
+  --destructive: #DC2626;
+  --destructive-foreground: #EEEDE3;
+  --border: #3A3A36;
+  --input: #3A3A36;
+  --ring: #F3D59D;
+  --chart-1: #F3D59D;
+  --chart-2: #FABBA3;
+  --chart-3: #B5D3C7;
+  --chart-4: #D5C1C3;
+  --chart-5: #C8BAA2;
+  --sidebar: #1A1A18;
+  --sidebar-foreground: #EEEDE3;
+  --sidebar-primary: #F3D59D;
+  --sidebar-primary-foreground: #111111;
+  --sidebar-accent: #2A2A28;
+  --sidebar-accent-foreground: #EEEDE3;
+  --sidebar-border: #3A3A36;
+  --sidebar-ring: #F3D59D;
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
+  --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Bespoke Serif', ui-serif, Georgia, serif;
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
   --color-background: var(--background);
   --color-foreground: var(--foreground);
