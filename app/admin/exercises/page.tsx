@@ -143,6 +143,7 @@ export default function AdminExercisesPage() {
   }
 
   const fetchInvites = async (exerciseId: string) => {
+    const supabase = createClient()
     const { data } = await supabase
       .from('exercise_invites')
       .select('id, user_id, status, user:users(email, full_name)')
