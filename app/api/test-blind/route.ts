@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { assignModelsToExercise, getExerciseModels, previewBlindAssignments } from '@/lib/blind-assignment'
+import { createClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,7 +18,8 @@ export async function POST(request: NextRequest) {
         if (!exerciseId) {
           return NextResponse.json({ error: 'exerciseId required' }, { status: 400 })
         }
-        const models = await getExerciseModels(exerciseId)
+        const supabase = await createClient()
+        const models = await getExerciseModels(supabase, exerciseId)
         return NextResponse.json({ success: true, models })
 
       case 'preview':
