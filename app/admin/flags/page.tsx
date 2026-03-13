@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
 import { createClient } from '@/lib/supabase/client'
+import { useDebounce } from '@/hooks/useDebounce'
 import { ArrowLeft, Search, ChevronLeft, ChevronRight, Flag, AlertTriangle, CheckCircle, XCircle, Clock, Download, Eye, X } from 'lucide-react'
 import Link from 'next/link'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
@@ -84,10 +85,12 @@ export default function AdminFlagsPage() {
   const [stats, setStats] = useState<Stats>({ total: 0, pending: 0, under_review: 0, resolved: 0, dismissed: 0, bySeverity: { high: 0, medium: 0, low: 0 }, byCategory: [], byModel: [], byUser: [] })
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 300)
   const [statusFilter, setStatusFilter] = useState<string>('')
   const [categoryFilter, setCategoryFilter] = useState<string>('')
   const [exerciseFilter, setExerciseFilter] = useState<string>('')
   const [exercises, setExercises] = useState<{ id: string; title: string }[]>([])
+  const [categories, setCategories] = useState<{ value: string; label: string }[]>([])
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [selectedFlag, setSelectedFlag] = useState<FlagData | null>(null)
@@ -96,11 +99,12 @@ export default function AdminFlagsPage() {
   useEffect(() => {
     fetchStats()
     fetchExercises()
+    fetchCategories()
   }, [])
 
   useEffect(() => {
     fetchFlags()
-  }, [page, search, statusFilter, categoryFilter, exerciseFilter])
+  }, [page, debouncedSearch, statusFilter, categoryFilter, exerciseFilter])
 
   const fetchExercises = async () => {
     const supabase = createClient()
@@ -108,63 +112,16 @@ export default function AdminFlagsPage() {
     setExercises(data || [])
   }
 
+  const fetchCategories = async () => {
+    const supabase = createClient()
+    const { data } = await supabase.from('flag_categories').select('value, label').order('sort_order')
+    setCategories(data || [])
+  }
+
   const fetchStats = async () => {
-    // Fetch flags with model info via admin API
-    const res = await fetch('/api/flags/admin?page=1&limit=1000')
-    const { flags: data } = await res.json()
-    
-    if (data) {
-      const s: Stats = { 
-        total: data.length, pending: 0, under_review: 0, resolved: 0, dismissed: 0, 
-        bySeverity: { high: 0, medium: 0, low: 0 },
-        byCategory: [],
-        byModel: [],
-        byUser: []
-      }
-      
-      const categoryCount: Record<string, number> = {}
-      const modelCount: Record<string, number> = {}
-      const userCount: Record<string, number> = {}
-      
-      data.forEach((f: FlagData) => {
-        if (f.status === 'pending') s.pending++
-        else if (f.status === 'under_review') s.under_review++
-        else if (f.status === 'resolved') s.resolved++
-        else if (f.status === 'dismissed') s.dismissed++
-        if (f.severity >= 8) s.bySeverity.high++
-        else if (f.severity >= 5) s.bySeverity.medium++
-        else s.bySeverity.low++
-        
-        // Count by category
-        const cats = f.evidence?.categories || [f.category]
-        cats.forEach(cat => {
-          categoryCount[cat] = (categoryCount[cat] || 0) + 1
-        })
-        
-        // Count by model
-        const modelName = f.model?.name || 'Unknown'
-        modelCount[modelName] = (modelCount[modelName] || 0) + 1
-        
-        // Count by user
-        const userName = f.user?.full_name || f.user?.email || 'Unknown'
-        userCount[userName] = (userCount[userName] || 0) + 1
-      })
-      
-      s.byCategory = Object.entries(categoryCount)
-        .map(([name, count]) => ({ name: categoryLabels[name] || name, count }))
-        .sort((a, b) => b.count - a.count)
-      
-      s.byModel = Object.entries(modelCount)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count)
-      
-      s.byUser = Object.entries(userCount)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10) // Top 10 users
-      
-      setStats(s)
-    }
+    const res = await fetch('/api/flags/admin/stats')
+    const data = await res.json()
+    setStats(data)
   }
 
   const fetchFlags = async () => {
@@ -172,7 +129,7 @@ export default function AdminFlagsPage() {
     const params = new URLSearchParams()
     params.set('page', page.toString())
     params.set('limit', PAGE_SIZE.toString())
-    if (search) params.set('search', search)
+    if (debouncedSearch) params.set('search', debouncedSearch)
     if (statusFilter) params.set('status', statusFilter)
     if (categoryFilter) params.set('category', categoryFilter)
     if (exerciseFilter) params.set('exercise_id', exerciseFilter)
@@ -364,7 +321,7 @@ export default function AdminFlagsPage() {
                 </select>
                 <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setPage(1) }} className="border rounded-md px-3 py-2 bg-background">
                   <option value="">All Categories</option>
-                  {Object.entries(categoryLabels).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  {categories.map(cat => <option key={cat.value} value={cat.value}>{cat.label}</option>)}
                 </select>
                 <select value={exerciseFilter} onChange={(e) => { setExerciseFilter(e.target.value); setPage(1) }} className="border rounded-md px-3 py-2 bg-background">
                   <option value="">All Exercises</option>

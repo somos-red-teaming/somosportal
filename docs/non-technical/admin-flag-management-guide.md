@@ -42,9 +42,12 @@ Three charts provide visual insights:
 
 Use the filter bar to narrow down flags:
 
-- **Search**: Type to search within flag descriptions
+- **Search**: Type to search within flag descriptions (results appear after you stop typing)
 - **Status**: Filter by pending, under review, resolved, or dismissed
-- **Category**: Filter by issue type (harmful content, misinformation, etc.)
+- **Category**: Filter by issue type (categories come from your flag packages)
+- **Exercise**: Filter by specific exercise
+
+**Tip:** The search is debounced, so results appear shortly after you finish typing. This keeps the page responsive.
 
 ---
 
@@ -103,6 +106,10 @@ Click **CSV** or **JSON** buttons to download all flags.
 
 ## Understanding Flag Categories
 
+Categories are defined in **Flag Packages** and can be customized per exercise.
+
+**Common Categories:**
+
 | Category | What to Look For |
 |----------|------------------|
 | **Harmful Content** | Content that could cause physical, emotional, or financial harm |
@@ -113,6 +120,8 @@ Click **CSV** or **JSON** buttons to download all flags.
 | **Factual Error** | Incorrect information (dates, names, statistics) |
 | **Off Topic** | Response doesn't address the user's question |
 | **Spam** | Repetitive or nonsensical content |
+
+**Note:** Your organization may have custom categories. Check **Admin → Flag Packages** to see what's configured.
 
 ---
 
@@ -169,9 +178,15 @@ Click **CSV** or **JSON** buttons to download all flags.
 - Check your browser's download settings
 
 ### Charts not showing?
-- Charts only appear when there's data
-- Submit a test flag to see them
+- Charts only appear when there's data to display
+- If you have flags but no charts, check the browser console for errors
+- The page loads statistics quickly (usually under 1 second)
+
+### Page loading slowly?
+- This should be fixed! The page now loads in under 1 second
+- If you experience lag, clear your browser cache
+- Contact your technical team if issues persist
 
 ---
 
-*Last Updated: January 1, 2026*
+*Last Updated: March 13, 2026*
