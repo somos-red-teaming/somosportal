@@ -38,24 +38,27 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Fetch relations
-  const flagsWithRelations = await Promise.all((flags || []).map(async (flag) => {
-    const { data: user } = await supabase
-      .from('users')
-      .select('email, full_name')
-      .eq('id', flag.user_id)
-      .single()
+  // Batch fetch relations
+  const userIds = [...new Set((flags || []).map(f => f.user_id).filter(Boolean))]
+  const interactionIds = [...new Set((flags || []).map(f => f.interaction_id).filter(Boolean))]
 
+  const { data: users } = userIds.length > 0
+    ? await supabase.from('users').select('id, email, full_name').in('id', userIds)
+    : { data: [] }
+  const userMap = new Map(users?.map(u => [u.id, { email: u.email, full_name: u.full_name }]) || [])
+
+  const { data: interactions } = interactionIds.length > 0
+    ? await supabase.from('interactions').select('id, prompt, response, model_id, exercise_id').in('id', interactionIds)
+    : { data: [] }
+  const interactionMap = new Map(interactions?.map(i => [i.id, i]) || [])
+
+  const flagsWithRelations = (flags || []).map(flag => {
+    const user = userMap.get(flag.user_id) || null
     let interaction = null
     let model = null
 
     if (flag.interaction_id) {
-      const { data: int } = await supabase
-        .from('interactions')
-        .select('prompt, response, model_id, exercise_id')
-        .eq('id', flag.interaction_id)
-        .single()
-
+      const int = interactionMap.get(flag.interaction_id)
       if (int) {
         model = modelMap.get(int.model_id) || null
         const exercise = exerciseMap.get(int.exercise_id) || null
@@ -63,13 +66,12 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fallback: get model from evidence.modelId
     if (!model && flag.evidence?.modelId) {
       model = modelMap.get(flag.evidence.modelId) || null
     }
 
     return { ...flag, user, interaction, model }
-  }))
+  })
 
   // Filter by exercise if specified
   let filteredFlags = flagsWithRelations
