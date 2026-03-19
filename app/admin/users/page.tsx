@@ -8,11 +8,14 @@ import { Input } from '@/components/ui/input'
 import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
 import { createClient } from '@/lib/supabase/client'
-import { ArrowLeft, Search, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Search, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 
 interface User {
   id: string
+  auth_user_id: string | null
   email: string
   full_name: string | null
   role: string
@@ -29,6 +32,10 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [deleteUser, setDeleteUser] = useState<User | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+  const [deleting, setDeleting] = useState(false)
+  const [deleteActivity, setDeleteActivity] = useState<{ interactions: number; flags: number; teams: number } | null>(null)
 
   useEffect(() => {
     fetchUsers()
@@ -39,7 +46,7 @@ export default function AdminUsersPage() {
     const supabase = createClient()
     let query = supabase
       .from('users')
-      .select('id, email, full_name, role, is_active, credits, created_at', { count: 'exact' })
+      .select('id, auth_user_id, email, full_name, role, is_active, credits, created_at', { count: 'exact' })
 
     if (search) {
       query = query.or(`email.ilike.%${search}%,full_name.ilike.%${search}%`)
@@ -76,6 +83,53 @@ export default function AdminUsersPage() {
     const supabase = createClient()
     await supabase.from('users').update({ credits: newCredits }).eq('id', userId)
     fetchUsers()
+  }
+
+  const handleDeleteUser = async () => {
+    if (!deleteUser || deleteConfirm !== deleteUser.email) return
+    setDeleting(true)
+    
+    const supabase = createClient()
+
+    // Delete from users table (trigger handles related data)
+    const { error } = await supabase.from('users').delete().eq('id', deleteUser.id)
+    if (error) {
+      console.error('Delete error:', error)
+      alert('Failed to delete user: ' + error.message)
+      setDeleting(false)
+      return
+    }
+
+    // Delete from Supabase Auth
+    if (deleteUser.auth_user_id) {
+      await fetch('/api/admin/delete-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ authUserId: deleteUser.auth_user_id })
+      })
+    }
+
+    setDeleting(false)
+    setDeleteUser(null)
+    setDeleteConfirm('')
+    setDeleteActivity(null)
+    fetchUsers()
+  }
+
+  const openDeleteDialog = async (user: User) => {
+    setDeleteUser(user)
+    setDeleteConfirm('')
+    const supabase = createClient()
+    const [interactions, flags, teams] = await Promise.all([
+      supabase.from('interactions').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabase.from('flags').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+      supabase.from('team_members').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+    ])
+    setDeleteActivity({
+      interactions: interactions.count || 0,
+      flags: flags.count || 0,
+      teams: teams.count || 0
+    })
   }
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
@@ -164,6 +218,9 @@ export default function AdminUsersPage() {
                               <Button size="sm" variant={user.is_active ? 'destructive' : 'default'} onClick={() => toggleActive(user.id, user.is_active)}>
                                 {user.is_active ? 'Deactivate' : 'Activate'}
                               </Button>
+                              <Button size="sm" variant="outline" className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => openDeleteDialog(user)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
                             </td>
                           </tr>
                         ))}
@@ -191,6 +248,49 @@ export default function AdminUsersPage() {
           </Card>
         </div>
       </div>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={!!deleteUser} onOpenChange={(open) => { if (!open) { setDeleteUser(null); setDeleteConfirm(''); setDeleteActivity(null) } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Delete User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              This will permanently delete <span className="font-semibold text-foreground">{deleteUser?.full_name || deleteUser?.email}</span> and all their data. This action cannot be undone.
+            </p>
+            {deleteActivity && (deleteActivity.interactions > 0 || deleteActivity.flags > 0 || deleteActivity.teams > 0) && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 space-y-1">
+                <p className="text-sm font-semibold text-destructive">⚠️ This user has activity that will be permanently deleted:</p>
+                <ul className="text-sm text-destructive/80 list-disc list-inside">
+                  {deleteActivity.interactions > 0 && <li>{deleteActivity.interactions} conversations</li>}
+                  {deleteActivity.flags > 0 && <li>{deleteActivity.flags} flags submitted</li>}
+                  {deleteActivity.teams > 0 && <li>{deleteActivity.teams} team memberships</li>}
+                </ul>
+              </div>
+            )}
+            <div>
+              <Label className="text-sm">Type <span className="font-mono font-semibold">{deleteUser?.email}</span> to confirm</Label>
+              <Input
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                placeholder="Type email to confirm..."
+                className="mt-2"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setDeleteUser(null); setDeleteConfirm(''); setDeleteActivity(null) }}>Cancel</Button>
+              <Button
+                variant="destructive"
+                disabled={deleteConfirm !== deleteUser?.email || deleting}
+                onClick={handleDeleteUser}
+              >
+                {deleting ? 'Deleting...' : 'Delete User'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AdminRoute>
   )
 }
