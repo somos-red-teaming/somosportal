@@ -53,7 +53,7 @@ export default async function ExercisePage() {
   // Fetch all interactions for this user (RLS will enforce access)
   const { data: interactions, error } = await supabase
     .from('interactions')
-    .select('id, prompt, response, created_at, model_id, exercise_id')
+    .select('id, prompt, response, created_at, model_id, exercise_id, session_id')
     .eq('user_id', dbUser.id)
     .order('created_at', { ascending: true })
 

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Slider } from '@/components/ui/slider'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Send, User, Bot, Copy, Image, Flag, Settings2, X } from 'lucide-react'
+import { Send, User, Bot, Copy, Image, Flag, Settings2, X, Plus, History, MessageSquare } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -82,7 +82,36 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
   const inputRef = useRef<HTMLTextAreaElement>(null)
   
   // Session ID for grouping conversation
-  const [sessionId] = useState(() => crypto.randomUUID())
+  const [sessionId, setSessionId] = useState(() => crypto.randomUUID())
+  const [sessions, setSessions] = useState<{ id: string; date: string; messageCount: number }[]>([])
+  const [showHistory, setShowHistory] = useState(false)
+  const [historyPage, setHistoryPage] = useState(0)
+  const SESSIONS_PER_PAGE = 5
+  const messageCache = useRef<Map<string, Message[]>>(new Map())
+
+  // Build sessions list from initial history
+  useEffect(() => {
+    if (initialHistory && initialHistory.length > 0) {
+      const sessionMap = new Map<string, { date: string; count: number }>()
+      initialHistory.forEach((interaction: any) => {
+        const sid = interaction.session_id || 'legacy'
+        if (!sessionMap.has(sid)) {
+          sessionMap.set(sid, { date: interaction.created_at, count: 0 })
+        }
+        sessionMap.get(sid)!.count++
+      })
+      const list = Array.from(sessionMap.entries()).map(([id, info]) => ({
+        id,
+        date: new Date(info.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        messageCount: info.count
+      }))
+      setSessions(list)
+      // Resume last session
+      if (list.length > 0) {
+        setSessionId(list[list.length - 1].id)
+      }
+    }
+  }, [initialHistory])
 
   // Tool mode state (for image generation)
   const [isExpired, setIsExpired] = useState(isTimerExpired || false)
@@ -98,12 +127,19 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
   // Flag categories (loaded from exercise package or default)
   const [flagCategoryOptions, setFlagCategoryOptions] = useState(defaultFlagCategories)
 
-  // Load initial history from props
+  // Load history filtered by current session (check cache first)
   useEffect(() => {
-    console.log('ChatBox initialHistory:', initialHistory)
+    // Check cache first
+    if (messageCache.current.has(sessionId)) {
+      setMessages(messageCache.current.get(sessionId)!)
+      return
+    }
     if (initialHistory && initialHistory.length > 0) {
+      const filtered = initialHistory.filter((i: any) => 
+        (i.session_id || 'legacy') === sessionId
+      )
       const history: Message[] = []
-      initialHistory.forEach((interaction: any) => {
+      filtered.forEach((interaction: any) => {
         history.push({
           id: `${interaction.id}-user`,
           type: 'user',
@@ -129,10 +165,74 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
           }
         }
       })
-      console.log('Setting messages:', history)
       setMessages(history)
+    } else {
+      setMessages([])
     }
-  }, [])
+  }, [sessionId, initialHistory])
+
+  // Cache messages whenever they change
+  useEffect(() => {
+    if (messages.length > 0) {
+      messageCache.current.set(sessionId, messages)
+    }
+  }, [messages, sessionId])
+
+  const startNewConversation = () => {
+    const newId = crypto.randomUUID()
+    // Add current session to list if it has messages
+    if (messages.length > 0) {
+      const existing = sessions.find(s => s.id === sessionId)
+      if (existing) {
+        // Update message count for current session
+        setSessions(prev => prev.map(s => s.id === sessionId 
+          ? { ...s, messageCount: messages.filter(m => m.type === 'user').length }
+          : s
+        ))
+      } else {
+        setSessions(prev => [...prev, {
+          id: sessionId,
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          messageCount: messages.filter(m => m.type === 'user').length
+        }])
+      }
+    }
+    setSessionId(newId)
+    setMessages([])
+    setShowHistory(false)
+    setHistoryPage(0)
+  }
+
+  const switchSession = (sid: string) => {
+    // Save current session's message count before switching
+    if (messages.length > 0 && sessions.find(s => s.id === sessionId)) {
+      setSessions(prev => prev.map(s => s.id === sessionId
+        ? { ...s, messageCount: messages.filter(m => m.type === 'user').length }
+        : s
+      ))
+    }
+    setSessionId(sid)
+    setShowHistory(false)
+  }
+
+  // Track current session in the list whenever messages change
+  useEffect(() => {
+    if (messages.length === 0) return
+    const userCount = messages.filter(m => m.type === 'user').length
+    if (userCount === 0) return
+    
+    setSessions(prev => {
+      const existing = prev.find(s => s.id === sessionId)
+      if (existing) {
+        return prev.map(s => s.id === sessionId ? { ...s, messageCount: userCount } : s)
+      }
+      return [...prev, {
+        id: sessionId,
+        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        messageCount: userCount
+      }]
+    })
+  }, [messages, sessionId])
 
   // Update expired state when timer expires
   useEffect(() => {
@@ -518,12 +618,12 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
     },
     p({ children }: any) {
       return (
-        <p
+        <div
           className="mb-2 last:mb-0 break-words hyphens-auto leading-relaxed"
           style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
         >
           {children}
-        </p>
+        </div>
       )
     },
     ul({ children }: any) {
@@ -573,6 +673,68 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
           {modelName}
         </h3>
         <div className="flex items-center gap-2">
+          {/* Conversation history dropdown */}
+          <DropdownMenu open={showHistory} onOpenChange={setShowHistory}>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="h-8 px-2 flex-shrink-0 gap-1 cursor-pointer" title="Conversation history">
+                <History className="h-3.5 w-3.5" />
+                <span className="text-xs">Conversations{sessions.length > 0 ? ` (${sessions.length})` : ''}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={startNewConversation} className="cursor-pointer gap-2 text-primary font-medium">
+                <Plus className="h-4 w-4" />
+                New Conversation
+              </DropdownMenuItem>
+              {sessions.length > 0 && (
+                <>
+                  <div className="border-t my-1" />
+                  {sessions
+                    .slice()
+                    .reverse()
+                    .slice(historyPage * SESSIONS_PER_PAGE, (historyPage + 1) * SESSIONS_PER_PAGE)
+                    .map((s) => (
+                    <DropdownMenuItem
+                      key={s.id}
+                      onClick={() => switchSession(s.id)}
+                      className={`cursor-pointer gap-2 ${s.id === sessionId ? 'bg-accent' : ''}`}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      <div className="flex flex-col">
+                        <span className="text-xs">{s.date}</span>
+                        <span className="text-xs text-muted-foreground">{s.messageCount} messages</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                  {sessions.length > SESSIONS_PER_PAGE && (
+                    <div className="flex items-center justify-between px-2 py-1 border-t mt-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 text-xs px-2"
+                        disabled={historyPage === 0}
+                        onClick={(e) => { e.preventDefault(); setHistoryPage(p => p - 1) }}
+                      >
+                        Newer
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        {historyPage + 1}/{Math.ceil(sessions.length / SESSIONS_PER_PAGE)}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 text-xs px-2"
+                        disabled={(historyPage + 1) * SESSIONS_PER_PAGE >= sessions.length}
+                        onClick={(e) => { e.preventDefault(); setHistoryPage(p => p + 1) }}
+                      >
+                        Older
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
           {timerEnabled && participantId && initialTimeRemaining !== undefined && (
             <TimerDisplay
               participantId={participantId}
