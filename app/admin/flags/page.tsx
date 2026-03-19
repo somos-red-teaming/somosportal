@@ -173,19 +173,28 @@ export default function AdminFlagsPage() {
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
       downloadBlob(blob, 'flags-export.json')
     } else {
-      const headers = ['ID', 'Category', 'Severity', 'Status', 'Description', 'Exercise', 'Model', 'Submitted By', 'Created', 'Reviewed']
-      const rows = data.map((f: FlagData) => [
-        f.id,
-        f.evidence?.categories?.join('; ') || f.category,
-        f.severity,
-        f.status,
-        `"${(f.description || '').replace(/"/g, '""')}"`,
-        f.interaction?.exercise?.title || '',
-        f.model?.name || '',
-        f.user?.email || '',
-        f.created_at,
-        f.reviewed_at || '',
-      ])
+      const headers = ['ID', 'Categories', 'Severity', 'Status', 'Description', 'User Prompt', 'AI Response', 'Full Conversation', 'Exercise', 'Model', 'Submitted By', 'Created', 'Reviewed', 'Notes']
+      const rows = data.map((f: FlagData) => {
+        const convo = (f.evidence?.conversation || [])
+          .map((m: any) => `${m.type === 'user' ? 'User' : 'AI'}: ${m.content}`)
+          .join('\n')
+        return [
+          f.id,
+          f.evidence?.categories?.join('; ') || f.category,
+          f.severity,
+          f.status,
+          `"${(f.description || '').replace(/"/g, '""')}"`,
+          `"${(f.interaction?.prompt || '').replace(/"/g, '""')}"`,
+          `"${(f.interaction?.response || '').replace(/"/g, '""')}"`,
+          `"${convo.replace(/"/g, '""')}"`,
+          f.interaction?.exercise?.title || '',
+          f.model?.name || '',
+          f.user?.email || '',
+          f.created_at,
+          f.reviewed_at || '',
+          `"${(f.reviewer_notes || '').replace(/"/g, '""')}"`,
+        ]
+      })
       const csv = [headers.join(','), ...rows.map((r: string[]) => r.join(','))].join('\n')
       downloadBlob(new Blob([csv], { type: 'text/csv' }), 'flags-export.csv')
     }

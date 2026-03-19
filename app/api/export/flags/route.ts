@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
   const { data: overrides } = await supabase.from('exercise_models').select('exercise_id, model_id, temperature_override')
   const overrideMap = new Map(overrides?.map(o => [`${o.exercise_id}-${o.model_id}`, o.temperature_override]) || [])
 
-  // Build query
-  let query = supabase.from('flags').select('*, user:user_id(email), interaction:interaction_id(exercise_id, model_id)')
+  // Build query - include interaction prompt and response
+  let query = supabase.from('flags').select('*, user:user_id(email), interaction:interaction_id(prompt, response, exercise_id, model_id)')
   if (from) query = query.gte('created_at', from)
   if (to) query = query.lte('created_at', to)
   
@@ -50,6 +50,11 @@ export async function GET(request: NextRequest) {
       severity: f.severity,
       status: f.status,
       description: f.description,
+      user_prompt: f.interaction?.prompt || '',
+      ai_response: f.interaction?.response || '',
+      full_conversation: (f.evidence?.conversation || [])
+        .map((m: any) => `${m.type === 'user' ? 'User' : 'AI'}: ${m.content}`)
+        .join('\n'),
       exercise: exerciseMap.get(exerciseIdVal) || '',
       model: modelMap.get(modelId)?.name || f.evidence?.modelId || '',
       default_temp: modelTemp,
@@ -62,13 +67,16 @@ export async function GET(request: NextRequest) {
   })
 
   if (format === 'csv') {
-    const headers = ['ID', 'Categories', 'Severity', 'Status', 'Description', 'Exercise', 'Model', 'Default Temp', 'Exercise Temp', 'Submitted By', 'Created', 'Reviewed', 'Notes']
+    const headers = ['ID', 'Categories', 'Severity', 'Status', 'Description', 'User Prompt', 'AI Response', 'Full Conversation', 'Exercise', 'Model', 'Default Temp', 'Exercise Temp', 'Submitted By', 'Created', 'Reviewed', 'Notes']
     const rows = exportData.map(f => [
       f.id,
       f.categories.join('; '),
       f.severity,
       f.status,
       `"${(f.description || '').replace(/"/g, '""')}"`,
+      `"${(f.user_prompt || '').replace(/"/g, '""')}"`,
+      `"${(f.ai_response || '').replace(/"/g, '""')}"`,
+      `"${(f.full_conversation || '').replace(/"/g, '""')}"`,
       f.exercise,
       f.model,
       f.default_temp,
