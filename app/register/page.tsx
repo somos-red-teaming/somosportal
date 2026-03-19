@@ -112,18 +112,18 @@ export default function RegisterPage() {
         <div className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12">
           <Card className="w-full max-w-md">
             <CardHeader className="space-y-1 text-center">
-              <CardTitle className="text-2xl font-bold text-green-600">Check Your Email</CardTitle>
+              <CardTitle className="text-2xl font-bold text-green-600">Account Created!</CardTitle>
               <CardDescription>
-                We've sent you a verification link at {formData.email}
+                Your account has been successfully created
               </CardDescription>
             </CardHeader>
             <CardContent className="text-center">
               <p className="text-sm text-muted-foreground mb-4">
-                Click the link in your email to verify your account and complete registration.
+                You can now sign in and start testing AI models.
               </p>
               <Link href="/login">
-                <Button variant="outline" className="w-full">
-                  Back to Sign In
+                <Button className="w-full">
+                  Sign In
                 </Button>
               </Link>
             </CardContent>

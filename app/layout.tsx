@@ -1,10 +1,23 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Space_Grotesk } from 'next/font/google'
+import localFont from 'next/font/local'
 import { AuthProvider } from '@/hooks/useAuth'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+})
+
+const bespokeSerif = localFont({
+  src: [
+    { path: '../public/fonts/BespokeSerif-Regular.woff2', weight: '400', style: 'normal' },
+    { path: '../public/fonts/BespokeSerif-Bold.woff2', weight: '700', style: 'normal' },
+  ],
+  variable: '--font-serif',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: 'SOMOS Civic Lab - AI Red-Teaming Platform',
@@ -27,7 +40,7 @@ export default function RootLayout({
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no" />
       </head>
-      <body className={`font-sans antialiased`}>
+      <body className={`${spaceGrotesk.variable} ${bespokeSerif.variable} font-sans antialiased`}>
         <AuthProvider>
           {children}
         </AuthProvider>

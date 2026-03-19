@@ -95,53 +95,53 @@ export default function DashboardPage() {
           )}
 
           <div className="grid gap-6 md:grid-cols-2 mb-8">
-            <Card className="bg-[#B5D3C7] border-[#B5D3C7]">
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-black">Interactions</CardTitle>
-                <Activity className="h-4 w-4 text-black/70" />
+                <CardTitle className="text-sm font-medium">Interactions</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-black">{loading ? '...' : stats.interactions}</div>
-                <p className="text-xs text-black/70">AI model interactions</p>
+                <div className="text-2xl font-bold">{loading ? '...' : stats.interactions}</div>
+                <p className="text-xs text-muted-foreground">AI model interactions</p>
               </CardContent>
             </Card>
 
-            <Card className="bg-[#FABBA3] border-[#FABBA3]">
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-black">Flags Submitted</CardTitle>
-                <Flag className="h-4 w-4 text-black/70" />
+                <CardTitle className="text-sm font-medium">Flags Submitted</CardTitle>
+                <Flag className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-black">{loading ? '...' : stats.flags}</div>
-                <p className="text-xs text-black/70">Issues reported</p>
+                <div className="text-2xl font-bold">{loading ? '...' : stats.flags}</div>
+                <p className="text-xs text-muted-foreground">Issues reported</p>
               </CardContent>
             </Card>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
-            <Card className="bg-[#F3D59D] border-[#F3D59D]">
+            <Card>
               <CardHeader>
-                <CardTitle className="text-black">Get Started</CardTitle>
-                <CardDescription className="text-black/70">Begin your AI red-teaming journey</CardDescription>
+                <CardTitle>Get Started</CardTitle>
+                <CardDescription>Begin your AI red-teaming journey</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-black/70">
+                <p className="text-sm text-muted-foreground">
                   Browse available red-teaming exercises and choose one that interests you.
                 </p>
                 <Button asChild><Link href="/exercises">View Exercises</Link></Button>
               </CardContent>
             </Card>
 
-            <Card className="bg-[#D5C1C3] border-[#D5C1C3]">
+            <Card>
               <CardHeader>
-                <CardTitle className="text-black">Your Profile</CardTitle>
-                <CardDescription className="text-black/70">Manage your account settings</CardDescription>
+                <CardTitle>Your Profile</CardTitle>
+                <CardDescription>Manage your account settings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-black/70">
+                <p className="text-sm text-muted-foreground">
                   Update your profile information and preferences.
                 </p>
-                <Button variant="outline" asChild className="border-black/20 hover:bg-black/10"><Link href="/profile">Edit Profile</Link></Button>
+                <Button variant="outline" asChild><Link href="/profile">Edit Profile</Link></Button>
               </CardContent>
             </Card>
           </div>

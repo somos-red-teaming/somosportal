@@ -4,31 +4,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* SOMOS Brand Fonts */
-@font-face {
-  font-family: 'Acid Grotesk';
-  src: url('/fonts/AcidGrotesk-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Bespoke Slab';
-  src: url('/fonts/bespoke-slab-font-family/BespokeSlab-Regular.otf') format('opentype');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Bespoke Slab';
-  src: url('/fonts/bespoke-slab-font-family/BespokeSlab-Bold.otf') format('opentype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-
 /* Prevent zoom and make site app-like on mobile */
 @media (max-width: 768px) {
   html {
@@ -68,80 +43,85 @@
 }
 
 :root {
-  /* SOMOS Brand Color Palette */
-  --background: oklch(0.95 0.01 85); /* Cream #EEEDE3 */
-  --foreground: oklch(0 0 0); /* Black #000000 */
-  --card: oklch(0.99 0 0); /* White */
-  --card-foreground: oklch(0.15 0 0);
-  --popover: oklch(0.99 0 0);
-  --popover-foreground: oklch(0.15 0 0);
-  --primary: oklch(0.75 0.08 140); /* Mint Green #B5D3C7 */
-  --primary-foreground: oklch(0 0 0);
-  --secondary: oklch(0.88 0.04 85); /* Tan #C8BAA2 */
-  --secondary-foreground: oklch(0.15 0 0);
-  --muted: oklch(0.88 0.01 280); /* Light Gray #D6D3CF */
-  --muted-foreground: oklch(0.45 0 0);
-  --accent: oklch(0.85 0.08 25); /* Peach #FABBA3 */
-  --accent-foreground: oklch(0.15 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.88 0.01 280);
-  --input: oklch(0.88 0.01 280);
-  --ring: oklch(0.75 0.08 140);
-  --chart-1: oklch(0.75 0.08 140); /* Mint */
-  --chart-2: oklch(0.85 0.08 25); /* Peach */
-  --chart-3: oklch(0.85 0.04 340); /* Mauve #D5C1C3 */
-  --chart-4: oklch(0.88 0.12 75); /* Yellow #F3D59D */
-  --chart-5: oklch(0.88 0.04 85); /* Tan */
-  --radius: 0.5rem;
-  --sidebar: oklch(0.95 0.01 85);
-  --sidebar-foreground: oklch(0.15 0 0);
-  --sidebar-primary: oklch(0.75 0.08 140);
-  --sidebar-primary-foreground: oklch(0 0 0);
-  --sidebar-accent: oklch(0.88 0.04 85);
-  --sidebar-accent-foreground: oklch(0.15 0 0);
-  --sidebar-border: oklch(0.88 0.01 280);
-  --sidebar-ring: oklch(0.75 0.08 140);
+  /* SOMOS Civic Lab — New brand identity by Estúdio Sarau */
+  --background: #EEEDE3;
+  --foreground: #111111;
+  --card: #FFFFFF;
+  --card-foreground: #111111;
+  --popover: #FFFFFF;
+  --popover-foreground: #111111;
+  --primary: #F3D59D;
+  --primary-foreground: #111111;
+  --secondary: #C8BAA2;
+  --secondary-foreground: #111111;
+  --muted: #E7E8E5;
+  --muted-foreground: #5A5A56;
+  --accent: #B5D3C7;
+  --accent-foreground: #111111;
+  --destructive: #DC2626;
+  --destructive-foreground: #FFFFFF;
+  --border: #D6D3CF;
+  --input: #D6D3CF;
+  --ring: #F3D59D;
+  --peach: #FABBA3;
+  --mauve: #D5C1C3;
+  --chart-1: #F3D59D;
+  --chart-2: #FABBA3;
+  --chart-3: #B5D3C7;
+  --chart-4: #D5C1C3;
+  --chart-5: #C8BAA2;
+  --radius: 0.625rem;
+  --sidebar: #EEEDE3;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #F3D59D;
+  --sidebar-primary-foreground: #111111;
+  --sidebar-accent: #E7E8E5;
+  --sidebar-accent-foreground: #111111;
+  --sidebar-border: #D6D3CF;
+  --sidebar-ring: #F3D59D;
 }
 
 .dark {
-  /* SOMOS Dark Mode - Black base with brand accent colors */
-  --background: oklch(0.10 0 0); /* Near black */
-  --foreground: oklch(0.95 0.01 85); /* Cream */
-  --card: oklch(0.15 0 0);
-  --card-foreground: oklch(0.95 0.01 85);
-  --popover: oklch(0.12 0 0);
-  --popover-foreground: oklch(0.95 0.01 85);
-  --primary: oklch(0.75 0.08 140); /* Mint Green */
-  --primary-foreground: oklch(0 0 0);
-  --secondary: oklch(0.25 0.02 85); /* Dark Tan */
-  --secondary-foreground: oklch(0.95 0.01 85);
-  --muted: oklch(0.25 0 0);
-  --muted-foreground: oklch(0.65 0 0);
-  --accent: oklch(0.85 0.08 25); /* Peach */
-  --accent-foreground: oklch(0 0 0); /* Black text on peach */
-  --destructive: oklch(0.50 0.20 27);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.25 0 0);
-  --input: oklch(0.25 0 0);
-  --ring: oklch(0.75 0.08 140);
-  --chart-1: oklch(0.75 0.08 140); /* Mint */
-  --chart-2: oklch(0.85 0.08 25); /* Peach */
-  --chart-3: oklch(0.85 0.04 340); /* Mauve */
-  --chart-4: oklch(0.88 0.12 75); /* Yellow */
-  --chart-5: oklch(0.88 0.04 85); /* Tan */
-  --sidebar: oklch(0.12 0 0);
-  --sidebar-foreground: oklch(0.95 0.01 85);
-  --sidebar-primary: oklch(0.75 0.08 140);
-  --sidebar-primary-foreground: oklch(0 0 0);
-  --sidebar-accent: oklch(0.25 0.02 85);
-  --sidebar-accent-foreground: oklch(0.95 0.01 85);
-  --sidebar-border: oklch(0.25 0 0);
-  --sidebar-ring: oklch(0.75 0.08 140);
+  /* SOMOS dark mode — warm near-blacks preserving brand warmth */
+  --background: #141413;
+  --foreground: #EEEDE3;
+  --card: #1E1E1C;
+  --card-foreground: #EEEDE3;
+  --popover: #1E1E1C;
+  --popover-foreground: #EEEDE3;
+  --primary: #F3D59D;
+  --primary-foreground: #111111;
+  --secondary: #3D3830;
+  --secondary-foreground: #EEEDE3;
+  --muted: #2A2A28;
+  --muted-foreground: #A0A09A;
+  --accent: #2A3B34;
+  --accent-foreground: #EEEDE3;
+  --destructive: #DC2626;
+  --destructive-foreground: #EEEDE3;
+  --border: #3A3A36;
+  --input: #3A3A36;
+  --ring: #F3D59D;
+  --peach: #3D2E28;
+  --mauve: #352E2F;
+  --chart-1: #F3D59D;
+  --chart-2: #FABBA3;
+  --chart-3: #B5D3C7;
+  --chart-4: #D5C1C3;
+  --chart-5: #C8BAA2;
+  --sidebar: #1A1A18;
+  --sidebar-foreground: #EEEDE3;
+  --sidebar-primary: #F3D59D;
+  --sidebar-primary-foreground: #111111;
+  --sidebar-accent: #2A2A28;
+  --sidebar-accent-foreground: #EEEDE3;
+  --sidebar-border: #3A3A36;
+  --sidebar-ring: #F3D59D;
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
+  --font-sans: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Bespoke Serif', ui-serif, Georgia, serif;
   --font-mono: 'Geist Mono', 'Geist Mono Fallback';
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -179,6 +159,8 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-peach: var(--peach);
+  --color-mauve: var(--mauve);
 }
 
 @layer base {
@@ -187,10 +169,5 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Bespoke Slab', serif;
-  }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Acid Grotesk', sans-serif;
-    font-weight: 700;
   }
 }
