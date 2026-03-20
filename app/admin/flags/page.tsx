@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -95,6 +95,7 @@ export default function AdminFlagsPage() {
   const [total, setTotal] = useState(0)
   const [selectedFlag, setSelectedFlag] = useState<FlagData | null>(null)
   const [reviewNotes, setReviewNotes] = useState('')
+  const prefetchCache = useRef<Map<string, { flags: FlagData[]; total: number }>>(new Map())
 
   useEffect(() => {
     fetchStats()
@@ -124,23 +125,54 @@ export default function AdminFlagsPage() {
     setStats(data)
   }
 
-  const fetchFlags = async () => {
-    setLoading(true)
+  const buildParams = (p: number) => {
     const params = new URLSearchParams()
-    params.set('page', page.toString())
+    params.set('page', p.toString())
     params.set('limit', PAGE_SIZE.toString())
     if (debouncedSearch) params.set('search', debouncedSearch)
     if (statusFilter) params.set('status', statusFilter)
     if (categoryFilter) params.set('category', categoryFilter)
     if (exerciseFilter) params.set('exercise_id', exerciseFilter)
-
-    const res = await fetch(`/api/flags/admin?${params}`)
-    const { flags: data, total: count } = await res.json()
-
-    setFlags(data || [])
-    setTotal(count || 0)
-    setLoading(false)
+    return params.toString()
   }
+
+  const fetchFlags = async () => {
+    const cacheKey = buildParams(page)
+    const cached = prefetchCache.current.get(cacheKey)
+    if (cached) {
+      setFlags(cached.flags)
+      setTotal(cached.total)
+      prefetchCache.current.delete(cacheKey)
+    } else {
+      setLoading(true)
+      const res = await fetch(`/api/flags/admin?${cacheKey}`)
+      const { flags: data, total: count } = await res.json()
+      setFlags(data || [])
+      setTotal(count || 0)
+      setLoading(false)
+    }
+
+    // Prefetch next and previous pages
+    const pagesToPrefetch = [page + 1, page - 1].filter(p => p >= 1)
+    pagesToPrefetch.forEach(p => {
+      const key = buildParams(p)
+      if (!prefetchCache.current.has(key)) {
+        fetch(`/api/flags/admin?${key}`)
+          .then(res => res.json())
+          .then(({ flags: data, total: count }) => {
+            if (data?.length > 0) {
+              prefetchCache.current.set(key, { flags: data, total: count })
+            }
+          })
+          .catch(() => {})
+      }
+    })
+  }
+
+  // Clear cache when filters change
+  useEffect(() => {
+    prefetchCache.current.clear()
+  }, [debouncedSearch, statusFilter, categoryFilter, exerciseFilter])
 
   const updateStatus = async (flagId: string, newStatus: string) => {
     const supabase = createClient()
