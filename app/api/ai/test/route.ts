@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     try {
       // Create provider and test connection
       const provider = AIProviderFactory.createProvider(model)
-      const success = await provider.testConnection()
+      const success = await provider.testConnection(model.model_id)
 
       console.log('Test result for', model.name, ':', success)
 

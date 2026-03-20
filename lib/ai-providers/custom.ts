@@ -156,7 +156,7 @@ export class CustomProvider implements AIProvider {
    * Test connection to custom API endpoint
    * Uses the configured model ID for the test request
    */
-  async testConnection(): Promise<boolean> {
+  async testConnection(modelId?: string): Promise<boolean> {
     try {
       // Try a minimal chat request with the actual model ID
       const response = await fetch(`${this.endpoint}/chat/completions`, {

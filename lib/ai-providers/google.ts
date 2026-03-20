@@ -125,12 +125,12 @@ export class GoogleProvider implements AIProvider {
     }
   }
 
-  async testConnection(): Promise<boolean> {
+  async testConnection(modelId?: string): Promise<boolean> {
     try {
       console.log('Testing Google API with key:', this.apiKey ? 'Key present' : 'No key')
       
       // Use gemini-2.5-flash which should be available
-      const testModel = 'gemini-2.5-flash'
+      const testModel = modelId || 'gemini-2.5-flash'
       console.log('Testing with model:', testModel)
       
       const response = await fetch(`${this.baseURL}/models/${testModel}:generateContent?key=${this.apiKey}`, {

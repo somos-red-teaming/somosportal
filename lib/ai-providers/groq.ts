@@ -64,7 +64,7 @@ export class GroqProvider implements AIProvider {
     }
   }
 
-  async testConnection(): Promise<boolean> {
+  async testConnection(modelId?: string): Promise<boolean> {
     try {
       console.log('Testing Groq API with key:', this.apiKey ? 'Key present' : 'No key')
       
@@ -75,7 +75,7 @@ export class GroqProvider implements AIProvider {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
+          model: modelId || 'llama-3.1-8b-instant',
           messages: [{ role: 'user', content: 'Hi' }],
           max_tokens: 1,
         }),

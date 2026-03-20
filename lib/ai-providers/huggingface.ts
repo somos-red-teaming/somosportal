@@ -22,7 +22,7 @@ export class HuggingFaceProvider implements AIProvider {
     }
   }
 
-  async testConnection(): Promise<boolean> {
+  async testConnection(modelId?: string): Promise<boolean> {
     // Just verify API key exists - actual test would require model-specific call
     return !!this.apiKey
   }

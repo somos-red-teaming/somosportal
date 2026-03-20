@@ -65,11 +65,10 @@ export class AnthropicProvider implements AIProvider {
     }
   }
 
-  async testConnection(): Promise<boolean> {
+  async testConnection(modelId?: string): Promise<boolean> {
     try {
       console.log('Testing Anthropic API with key:', this.apiKey ? 'Key present' : 'No key')
       
-      // Test with current model
       const response = await fetch(`${this.baseURL}/messages`, {
         method: 'POST',
         headers: {
@@ -78,7 +77,7 @@ export class AnthropicProvider implements AIProvider {
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-3-5-haiku-20241022',
+          model: modelId || 'claude-3-5-haiku-20241022',
           max_tokens: 1,
           messages: [{ role: 'user', content: 'Hi' }],
         }),

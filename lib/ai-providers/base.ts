@@ -13,7 +13,7 @@ export interface AIProvider {
   generateImage?(prompt: string, options?: GenerateImageOptions): Promise<AIImageResponse>
   
   // Test connection
-  testConnection(): Promise<boolean>
+  testConnection(modelId?: string): Promise<boolean>
 }
 
 /**

@@ -125,7 +125,7 @@ export class OpenAIProvider implements AIProvider {
    * Tests connection to OpenAI API
    * @returns Promise<boolean> - True if connection successful, false otherwise
    */
-  async testConnection(): Promise<boolean> {
+  async testConnection(modelId?: string): Promise<boolean> {
     try {
       const response = await fetch(`${this.baseURL}/models`, {
         headers: {
