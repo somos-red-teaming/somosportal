@@ -45,14 +45,18 @@ export async function GET(request: Request) {
     }
 
     if (provider === 'anthropic') {
-      // Anthropic doesn't have a models list API, return known models
-      models = [
-        { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet' },
-        { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku' },
-        { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus' },
-        { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet' },
-        { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku' },
-      ]
+      const res = await fetch('https://api.anthropic.com/v1/models', {
+        headers: {
+          'x-api-key': process.env.ANTHROPIC_API_KEY!,
+          'anthropic-version': '2023-06-01'
+        }
+      })
+      const data = await res.json()
+      models = (data.data || []).map((m: any) => ({
+        id: m.id,
+        name: m.display_name || m.id,
+        context_window: m.max_input_tokens
+      }))
     }
 
     if (provider === 'huggingface') {
