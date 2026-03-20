@@ -139,7 +139,7 @@ export default function AdminFlagsPage() {
   const fetchFlags = async () => {
     const cacheKey = buildParams(page)
     const cached = prefetchCache.current.get(cacheKey)
-    if (cached) {
+    if (cached && cached.flags.length > 0) {
       setFlags(cached.flags)
       setTotal(cached.total)
       prefetchCache.current.delete(cacheKey)
@@ -153,18 +153,25 @@ export default function AdminFlagsPage() {
     }
 
     // Prefetch next and previous pages
-    const pagesToPrefetch = [page + 1, page - 1].filter(p => p >= 1)
+    const totalPages = Math.ceil(total / PAGE_SIZE)
+    const pagesToPrefetch = [page + 1, page - 1].filter(p => p >= 1 && (totalPages ? p <= totalPages : true))
     pagesToPrefetch.forEach(p => {
       const key = buildParams(p)
       if (!prefetchCache.current.has(key)) {
+        prefetchCache.current.set(key, { flags: [], total: 0 })
         fetch(`/api/flags/admin?${key}`)
-          .then(res => res.json())
-          .then(({ flags: data, total: count }) => {
+          .then(res => {
+            if (!res.ok) throw new Error('Failed to prefetch page')
+            return res.json()
+          })
+          .then(({ flags: data, total: cnt }) => {
             if (data?.length > 0) {
-              prefetchCache.current.set(key, { flags: data, total: count })
+              prefetchCache.current.set(key, { flags: data, total: cnt })
             }
           })
-          .catch(() => {})
+          .catch(() => {
+            prefetchCache.current.delete(key)
+          })
       }
     })
   }
