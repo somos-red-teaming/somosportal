@@ -41,6 +41,7 @@ interface AIModel {
   name: string
   display_name: string
   provider: string
+  model_id: string
   temperature?: number
 }
 
@@ -185,29 +186,15 @@ export default function AdminExercisesPage() {
     if (inviteExercise) fetchInvites(inviteExercise.id)
   }
 
-  /**
-   * Fetch available AI models from database
-   * Gets active models with full details, filtering out test entries
-   */
   const fetchModels = async () => {
     const supabase = createClient()
     const { data } = await supabase
       .from('ai_models')
-      .select('id, name, display_name, provider, temperature')
+      .select('id, name, display_name, provider, model_id, temperature')
       .eq('is_active', true)
-      .not('name', 'ilike', '%test%') // Filter out test models
-      .not('display_name', 'ilike', '%test%') // Filter out test display names
+      .order('provider')
       .order('name')
-    
-    // Clean up the data - use proper display names
-    const cleanModels = (data || []).map(model => ({
-      ...model,
-      display_name: model.display_name && !model.display_name.includes('Model ') 
-        ? model.display_name 
-        : model.name
-    }))
-    
-    setModels(cleanModels)
+    setModels(data || [])
   }
 
   const fetchExercises = async () => {
@@ -587,18 +574,26 @@ export default function AdminExercisesPage() {
                   {models.length > 0 && (
                     <div>
                       <Label>Target AI Models</Label>
-                      <div className="flex flex-wrap gap-2 mt-2">
+                      <div className="mt-2 border rounded-md max-h-48 overflow-y-auto">
                         {models.map((m) => (
-                          <Badge 
-                            key={m.id} 
-                            variant={form.target_models.includes(m.id) ? 'default' : 'outline'} 
-                            className="cursor-pointer" 
-                            onClick={() => toggleModel(m.id)}
+                          <label
+                            key={m.id}
+                            className="flex items-center gap-3 px-3 py-2 hover:bg-muted cursor-pointer border-b last:border-b-0"
                           >
-                            {m.display_name || m.name}
-                          </Badge>
+                            <input
+                              type="checkbox"
+                              checked={form.target_models.includes(m.id)}
+                              onChange={() => toggleModel(m.id)}
+                              className="h-4 w-4"
+                            />
+                            <span className="text-sm flex-1">{m.display_name || m.name}</span>
+                            <span className="text-xs text-muted-foreground">{m.provider}/{m.model_id}</span>
+                          </label>
                         ))}
                       </div>
+                      {form.target_models.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">{form.target_models.length} model(s) selected</p>
+                      )}
                     </div>
                   )}
                   {form.target_models.length > 0 && (
