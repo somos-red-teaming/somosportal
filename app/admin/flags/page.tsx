@@ -97,12 +97,12 @@ export default function AdminFlagsPage() {
   const [reviewNotes, setReviewNotes] = useState('')
 
   useEffect(() => {
-    fetchStats()
     fetchExercises()
     fetchCategories()
   }, [])
 
   useEffect(() => {
+    fetchStats()
     fetchFlags()
   }, [page, debouncedSearch, statusFilter, categoryFilter, exerciseFilter])
 
@@ -119,7 +119,8 @@ export default function AdminFlagsPage() {
   }
 
   const fetchStats = async () => {
-    const res = await fetch('/api/flags/admin/stats')
+    const params = exerciseFilter ? `?exercise_id=${exerciseFilter}` : ''
+    const res = await fetch(`/api/flags/admin/stats${params}`)
     const data = await res.json()
     setStats(data)
   }

@@ -1,7 +1,8 @@
 -- Create SQL function for flag statistics aggregation
 -- Run this in Supabase SQL Editor
+-- Accepts optional exercise_id to filter stats by exercise
 
-CREATE OR REPLACE FUNCTION get_flag_statistics()
+CREATE OR REPLACE FUNCTION get_flag_statistics(p_exercise_id uuid DEFAULT NULL)
 RETURNS jsonb
 LANGUAGE plpgsql
 AS $$
@@ -16,22 +17,26 @@ BEGIN
   -- Status counts
   SELECT jsonb_build_object(
     'total', COUNT(*),
-    'pending', COUNT(*) FILTER (WHERE status = 'pending'),
-    'under_review', COUNT(*) FILTER (WHERE status = 'under_review'),
-    'resolved', COUNT(*) FILTER (WHERE status = 'resolved'),
-    'dismissed', COUNT(*) FILTER (WHERE status = 'dismissed')
+    'pending', COUNT(*) FILTER (WHERE f.status = 'pending'),
+    'under_review', COUNT(*) FILTER (WHERE f.status = 'under_review'),
+    'resolved', COUNT(*) FILTER (WHERE f.status = 'resolved'),
+    'dismissed', COUNT(*) FILTER (WHERE f.status = 'dismissed')
   ) INTO status_counts
-  FROM flags;
+  FROM flags f
+  LEFT JOIN interactions i ON f.interaction_id = i.id
+  WHERE (p_exercise_id IS NULL OR i.exercise_id = p_exercise_id);
 
   -- Severity counts
   SELECT jsonb_build_object(
-    'high', COUNT(*) FILTER (WHERE severity >= 8),
-    'medium', COUNT(*) FILTER (WHERE severity >= 5 AND severity < 8),
-    'low', COUNT(*) FILTER (WHERE severity < 5)
+    'high', COUNT(*) FILTER (WHERE f.severity >= 8),
+    'medium', COUNT(*) FILTER (WHERE f.severity >= 5 AND f.severity < 8),
+    'low', COUNT(*) FILTER (WHERE f.severity < 5)
   ) INTO severity_counts
-  FROM flags;
+  FROM flags f
+  LEFT JOIN interactions i ON f.interaction_id = i.id
+  WHERE (p_exercise_id IS NULL OR i.exercise_id = p_exercise_id);
 
-  -- Category counts (expand evidence.categories array)
+  -- Category counts
   SELECT jsonb_agg(jsonb_build_object('name', category, 'count', cnt) ORDER BY cnt DESC)
   INTO category_data
   FROM (
@@ -39,13 +44,15 @@ BEGIN
       COALESCE(cat, f.category) as category,
       COUNT(*) as cnt
     FROM flags f
+    LEFT JOIN interactions i ON f.interaction_id = i.id
     LEFT JOIN LATERAL jsonb_array_elements_text(
       COALESCE(f.evidence->'categories', jsonb_build_array(f.category))
     ) cat ON true
+    WHERE (p_exercise_id IS NULL OR i.exercise_id = p_exercise_id)
     GROUP BY COALESCE(cat, f.category)
   ) cats;
 
-  -- Model counts (join interactions OR use evidence.modelId)
+  -- Model counts
   SELECT jsonb_agg(jsonb_build_object('name', model_name, 'count', cnt) ORDER BY cnt DESC)
   INTO model_data
   FROM (
@@ -56,10 +63,11 @@ BEGIN
     LEFT JOIN interactions i ON f.interaction_id = i.id
     LEFT JOIN ai_models m ON i.model_id = m.id
     LEFT JOIN ai_models m2 ON (f.evidence->>'modelId')::uuid = m2.id
+    WHERE (p_exercise_id IS NULL OR i.exercise_id = p_exercise_id)
     GROUP BY COALESCE(m.name, m2.name, 'Unknown')
   ) models;
 
-  -- User counts (top 10, group by user_id to avoid name collisions)
+  -- User counts (top 10)
   SELECT jsonb_agg(jsonb_build_object('name', user_name, 'count', cnt) ORDER BY cnt DESC)
   INTO user_data
   FROM (
@@ -67,7 +75,9 @@ BEGIN
       COALESCE(u.full_name, u.email, 'Unknown') as user_name,
       COUNT(*) as cnt
     FROM flags f
+    LEFT JOIN interactions i ON f.interaction_id = i.id
     LEFT JOIN users u ON f.user_id = u.id
+    WHERE (p_exercise_id IS NULL OR i.exercise_id = p_exercise_id)
     GROUP BY f.user_id, u.full_name, u.email
     ORDER BY cnt DESC
     LIMIT 10

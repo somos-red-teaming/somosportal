@@ -13,14 +13,19 @@ const categoryLabels: Record<string, string> = {
   other: 'Other',
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const exerciseId = searchParams.get('exercise_id')
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
   // Call SQL function for efficient aggregation
-  const { data, error } = await supabase.rpc('get_flag_statistics')
+  const { data, error } = await supabase.rpc('get_flag_statistics', {
+    p_exercise_id: exerciseId || null
+  })
 
   if (error || !data) {
     console.error('Error fetching flag statistics:', error)
