@@ -131,3 +131,4 @@ playwright-report/
 
 # Agent files
 AGENTS.md
+supabase/.temp/
