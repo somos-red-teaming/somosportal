@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 const categoryLabels: Record<string, string> = {
   harmful_content: 'Harmful Content',
@@ -14,6 +15,11 @@ const categoryLabels: Record<string, string> = {
 }
 
 export async function GET(request: Request) {
+  const admin = await requireAdmin()
+  if (!admin.authorized) {
+    return admin.response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { searchParams } = new URL(request.url)
   const exerciseId = searchParams.get('exercise_id')
 

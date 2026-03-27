@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { requireAdmin } from '@/lib/auth/requireAdmin'
 
 /**
  * Returns clustered flag data for the constellation visualization.
@@ -11,6 +12,11 @@ import { createClient } from '@supabase/supabase-js'
  *   limit - max individual flag nodes per cluster (default 50, prevents browser overload)
  */
 export async function GET(request: Request) {
+  const admin = await requireAdmin()
+  if (!admin.authorized) {
+    return admin.response ?? NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { searchParams } = new URL(request.url)
   const exerciseId = searchParams.get('exercise_id')
   const nodeLimit = Math.min(parseInt(searchParams.get('limit') || '50'), 200)

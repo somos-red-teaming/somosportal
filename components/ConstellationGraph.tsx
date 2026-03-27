@@ -58,13 +58,27 @@ const categoryLabels: Record<string, string> = {
   other: 'Other',
 }
 
+const STARFIELD_SVG = `
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'>
+  <rect width='160' height='160' fill='black' opacity='0'/>
+  <circle cx='20' cy='40' r='1.2' fill='white' opacity='0.35'/>
+  <circle cx='120' cy='20' r='0.8' fill='white' opacity='0.25'/>
+  <circle cx='90' cy='140' r='1' fill='white' opacity='0.3'/>
+  <circle cx='140' cy='90' r='0.8' fill='white' opacity='0.2'/>
+  <circle cx='40' cy='110' r='0.9' fill='white' opacity='0.28'/>
+  <circle cx='70' cy='70' r='0.6' fill='white' opacity='0.2'/>
+</svg>
+`
+
+const STARFIELD_TEXTURE = `url("data:image/svg+xml,${encodeURIComponent(STARFIELD_SVG)}")`
+
 export default function ConstellationGraph({ clusters, nodes, links, onClusterClick }: ConstellationGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
 
   const render = useCallback(() => {
-    if (!svgRef.current || !containerRef.current || nodes.length === 0) return
+    if (!svgRef.current || !containerRef.current) return
 
     const container = containerRef.current
     const width = container.clientWidth
@@ -74,20 +88,62 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
     svg.selectAll('*').remove()
     svg.attr('width', width).attr('height', height)
 
+    if (nodes.length === 0) {
+      return () => {}
+    }
+
     const tooltip = d3.select(tooltipRef.current)
+
+    // Read theme colors from CSS variables
+    const styles = getComputedStyle(container)
+    const borderColor = styles.getPropertyValue('--border').trim() || '#D6D3CF'
 
     // Color scale by category
     const colorScale = new Map(clusters.map((c, i) => [c.id, CLUSTER_COLORS[i % CLUSTER_COLORS.length]]))
+
+    // Shared filters for glow/shadow
+    const defs = svg.append('defs')
+    const glowFilter = defs.append('filter')
+      .attr('id', 'node-glow')
+      .attr('x', '-50%')
+      .attr('y', '-50%')
+      .attr('width', '200%')
+      .attr('height', '200%')
+    glowFilter.append('feGaussianBlur')
+      .attr('in', 'SourceGraphic')
+      .attr('stdDeviation', 6)
+      .attr('result', 'coloredBlur')
+    const glowMerge = glowFilter.append('feMerge')
+    glowMerge.append('feMergeNode').attr('in', 'coloredBlur')
+    glowMerge.append('feMergeNode').attr('in', 'SourceGraphic')
+
+    const labelShadow = defs.append('filter')
+      .attr('id', 'label-shadow')
+      .attr('x', '-50%')
+      .attr('y', '-50%')
+      .attr('width', '200%')
+      .attr('height', '200%')
+    labelShadow.append('feDropShadow')
+      .attr('dx', 0)
+      .attr('dy', 3)
+      .attr('stdDeviation', 6)
+      .attr('flood-color', '#000000')
+      .attr('flood-opacity', 0.55)
 
     // Build simulation nodes with category grouping
     type SimNode = NodeData & d3.SimulationNodeDatum & { radius: number; color: string }
     type SimLink = d3.SimulationLinkDatum<SimNode>
 
-    const simNodes: SimNode[] = nodes.map(n => ({
-      ...n,
-      radius: Math.max(3, Math.min(12, n.severity * 1.2)),
-      color: colorScale.get(n.category) || '#666',
-    }))
+    const severityScale = d3.scaleLinear().domain([1, 10]).range([4, 28])
+
+    const simNodes: SimNode[] = nodes.map(n => {
+      const severity = Math.max(1, Math.min(10, n.severity || 1))
+      return {
+        ...n,
+        radius: severityScale(severity),
+        color: colorScale.get(n.category) || '#666',
+      }
+    })
 
     const nodeMap = new Map(simNodes.map(n => [n.id, n]))
     const simLinks: SimLink[] = links
@@ -95,13 +151,15 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
       .map(l => ({ source: l.source, target: l.target }))
 
     // Cluster centers for force grouping
-    const clusterCenters = new Map<string, { x: number; y: number }>()
+    type ClusterCenter = { x: number; y: number; angle: number }
+    const clusterCenters = new Map<string, ClusterCenter>()
     clusters.forEach((c, i) => {
-      const angle = (i / clusters.length) * 2 * Math.PI
+      const angle = (i / Math.max(1, clusters.length)) * 2 * Math.PI
       const r = Math.min(width, height) * 0.3
       clusterCenters.set(c.id, {
         x: width / 2 + Math.cos(angle) * r,
         y: height / 2 + Math.sin(angle) * r,
+        angle,
       })
     })
 
@@ -134,8 +192,8 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
       .selectAll('line')
       .data(simLinks)
       .enter().append('line')
-      .attr('stroke', '#ffffff')
-      .attr('stroke-opacity', 0.06)
+      .attr('stroke', borderColor)
+      .attr('stroke-opacity', 0.3)
       .attr('stroke-width', 0.5)
 
     // Nodes
@@ -149,6 +207,7 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
       .attr('stroke', d => d.color)
       .attr('stroke-opacity', 0.3)
       .attr('stroke-width', 1)
+      .attr('filter', d => d.severity >= 8 ? 'url(#node-glow)' : null)
       .style('cursor', 'pointer')
       .call(d3.drag<SVGCircleElement, SimNode>()
         .on('start', (event, d) => {
@@ -189,32 +248,67 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
         tooltip.style('display', 'none')
       })
 
-    // Cluster labels
+    // Cluster glows + labels
+    const clusterLayer = zoomGroup.append('g')
     clusters.forEach((cluster, i) => {
       const center = clusterCenters.get(cluster.id)
       if (!center) return
       const color = CLUSTER_COLORS[i % CLUSTER_COLORS.length]
+      const glowRadius = Math.max(30, Math.sqrt(cluster.totalCount) * 8)
 
-      // Glow circle behind cluster
-      zoomGroup.append('circle')
+      clusterLayer.append('circle')
         .attr('cx', center.x)
         .attr('cy', center.y)
-        .attr('r', Math.max(30, Math.sqrt(cluster.totalCount) * 8))
+        .attr('r', glowRadius)
         .attr('fill', color)
-        .attr('fill-opacity', 0.04)
+        .attr('fill-opacity', 0.05)
         .style('cursor', 'pointer')
         .on('click', () => onClusterClick?.(cluster.id))
 
-      // Label
-      zoomGroup.append('text')
-        .attr('x', center.x)
-        .attr('y', center.y - Math.max(30, Math.sqrt(cluster.totalCount) * 8) - 8)
+      const labelDistance = glowRadius + 60
+      const rawLabelX = center.x + Math.cos(center.angle) * labelDistance
+      const rawLabelY = center.y + Math.sin(center.angle) * labelDistance
+      const labelX = Math.min(Math.max(rawLabelX, 80), width - 80)
+      const labelY = Math.min(Math.max(rawLabelY, 60), height - 60)
+      const midX = (center.x + labelX) / 2 + Math.cos(center.angle + Math.PI / 2) * 20
+      const midY = (center.y + labelY) / 2 + Math.sin(center.angle + Math.PI / 2) * 20
+
+      clusterLayer.append('path')
+        .attr('d', `M ${center.x} ${center.y} Q ${midX} ${midY} ${labelX} ${labelY}`)
+        .attr('stroke', color)
+        .attr('stroke-opacity', 0.35)
+        .attr('stroke-width', 1.5)
+        .attr('fill', 'none')
+
+      const labelGroup = clusterLayer.append('g')
+        .attr('transform', `translate(${labelX}, ${labelY})`)
+        .style('cursor', 'pointer')
+        .attr('filter', 'url(#label-shadow)')
+        .on('click', () => onClusterClick?.(cluster.id))
+
+      const labelText = labelGroup.append('text')
         .attr('text-anchor', 'middle')
-        .attr('fill', color)
-        .attr('font-size', '13px')
+        .attr('dominant-baseline', 'middle')
+        .attr('fill', '#f5f5f5')
+        .attr('font-size', '12px')
         .attr('font-weight', '600')
-        .attr('opacity', 0.9)
         .text(`${categoryLabels[cluster.id] || cluster.id} (${cluster.totalCount})`)
+
+      const textNode = labelText.node()
+      if (textNode) {
+        const bbox = textNode.getBBox()
+        const paddingX = 18
+        const paddingY = 8
+        labelGroup.insert('rect', 'text')
+          .attr('x', bbox.x - paddingX)
+          .attr('y', bbox.y - paddingY)
+          .attr('width', bbox.width + paddingX * 2)
+          .attr('height', bbox.height + paddingY * 2)
+          .attr('rx', 999)
+          .attr('fill', 'rgba(8, 8, 16, 0.85)')
+          .attr('stroke', color)
+          .attr('stroke-opacity', 0.7)
+      }
     })
 
     // Tick
@@ -246,12 +340,29 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
     }
   }, [render])
 
+  useEffect(() => {
+    if (!containerRef.current) return
+    const observer = new ResizeObserver(() => render())
+    observer.observe(containerRef.current)
+    return () => observer.disconnect()
+  }, [render])
+
   return (
-    <div ref={containerRef} className="relative w-full h-full bg-[#0a0a0f]">
-      <svg ref={svgRef} className="w-full h-full" />
+    <div ref={containerRef} className="relative w-full h-full bg-[#050509] overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-0 opacity-80"
+        style={{
+          backgroundImage: 'radial-gradient(circle at 20% 20%, rgba(243,213,157,0.18), transparent 55%), radial-gradient(circle at 80% 0%, rgba(232,184,212,0.12), transparent 50%)',
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-40 mix-blend-screen"
+        style={{ backgroundImage: STARFIELD_TEXTURE }}
+      />
+      <svg ref={svgRef} className="relative w-full h-full" />
       <div
         ref={tooltipRef}
-        className="fixed z-50 hidden max-w-xs px-3 py-2 rounded-lg bg-black/90 text-white text-sm border border-white/10 pointer-events-none"
+        className="fixed z-50 hidden max-w-xs px-3 py-2 rounded-lg bg-black/90 text-white text-sm border border-white/10 pointer-events-none shadow-lg"
       />
       {nodes.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center text-white/40 text-lg">

@@ -26,6 +26,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!user) return
+    let isMounted = true
 
     const fetchStats = async () => {
       const supabase = createClient()
@@ -35,17 +36,27 @@ export default function DashboardPage() {
         .eq('auth_user_id', user.id)
         .single()
 
+      const flagStatsPromise = supabase.from('flags').select('id', { count: 'exact', head: true })
+
       if (!userData) {
+        const flags = await flagStatsPromise
+        if (!isMounted) return
+        setStats(prev => ({
+          ...prev,
+          flags: flags.count || 0,
+        }))
         setLoading(false)
         return
       }
 
-      const [interactions, flags, participation, profile] = await Promise.all([
+      const [interactions, participation, profile, flags] = await Promise.all([
         supabase.from('interactions').select('id', { count: 'exact', head: true }).eq('user_id', userData.id),
-        supabase.from('flags').select('id', { count: 'exact', head: true }).eq('user_id', userData.id),
         supabase.from('exercise_participation').select('id', { count: 'exact', head: true }).eq('user_id', userData.id).eq('status', 'completed'),
         supabase.from('user_profiles').select('reputation_score').eq('user_id', userData.id).single(),
+        flagStatsPromise,
       ])
+
+      if (!isMounted) return
 
       setStats({
         interactions: interactions.count || 0,
@@ -57,6 +68,7 @@ export default function DashboardPage() {
     }
 
     fetchStats()
+    return () => { isMounted = false }
   }, [user])
 
   return (

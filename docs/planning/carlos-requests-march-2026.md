@@ -80,5 +80,11 @@ Visual tool for deliberation sessions. Shows flagged harms as a constellation/ne
 - [ ] **Security:** Add server-side admin auth to `/api/export/*` (flags, exercises, interactions) - same issue
 - [x] **Security:** Remove console.log from deliberation page fetchClusters (leaks prompt/response snippets)
 - [ ] **Polish:** Tighten cluster force so nodes stay closer to labels
-- [ ] **Polish:** Add glow/pulse on high severity nodes
+- [x] **Polish:** Add glow/pulse on high severity nodes
 - [x] **Polish:** Add nav links to admin page and dashboard
+- [x] **Polish:** Expand node severity scale (4–28px) for clearer sizing
+- [x] **Polish:** Add glassy control panel with selector + fullscreen affordance
+- [x] **Polish:** Create legend pills with percent badges and severity scale row
+- [x] **Polish:** Add curved connectors from clusters to labels
+- [x] **Polish:** Add gradient + starfield background for constellation canvas
+- [ ] **Feature:** Add right-hand slide-out with cluster details (deferred)
