@@ -33,19 +33,32 @@ This document outlines the security measures implemented in the SOMOS platform t
 ### Protected Routes
 
 ```typescript
-// Admin-only routes
+// Admin-only pages (client-side)
 /admin/*           → AdminRoute component checks role
 /admin/flags       → Requires admin role
 /admin/export      → Requires admin role
 /admin/users       → Requires admin role
 /admin/exercises   → Requires admin role
 /admin/models      → Requires admin role
+/admin/deliberation → Requires admin role
+
+// Admin-only API routes (server-side via requireAdmin())
+/api/flags/admin/          → 401/403 if not admin
+/api/flags/admin/stats     → 401/403 if not admin
+/api/flags/admin/clusters  → 401/403 if not admin
+/api/export/flags          → 401/403 if not admin
+/api/export/exercises      → 401/403 if not admin
+/api/export/interactions   → 401/403 if not admin
 
 // Authenticated routes
 /dashboard         → ProtectedRoute component
 /profile           → ProtectedRoute component
 /exercise/*        → ProtectedRoute component
 ```
+
+### Server-Side Admin Guard
+
+Admin API routes use `requireAdmin()` (`lib/auth/requireAdmin.ts`) to verify the caller's session and role before processing. This prevents unauthenticated or non-admin users from accessing sensitive data even if they know the API URL.
 
 ---
 

@@ -498,7 +498,11 @@ app/
 │   ├── flags/
 │   │   ├── route.ts          # Flag submission (POST)
 │   │   └── admin/
-│   │       └── route.ts      # Admin flags API (GET)
+│   │       ├── route.ts      # Admin flags API (GET)
+│   │       ├── stats/
+│   │       │   └── route.ts  # Flag statistics (GET, accepts exercise_id)
+│   │       └── clusters/
+│   │           └── route.ts  # Cluster data for deliberation map (GET)
 │   └── export/
 │       ├── flags/
 │       │   └── route.ts      # Flags export
@@ -510,4 +514,22 @@ app/
 
 ---
 
-*Last Updated: January 1, 2026*
+## Stats Filtering by Exercise (March 2026)
+
+The `get_flag_statistics()` SQL function accepts an optional `p_exercise_id` parameter. When provided, all sub-queries (status, severity, category, model, user) join through `interactions` and filter by `exercise_id`.
+
+```sql
+-- Called with exercise filter
+SELECT get_flag_statistics('a97cca58-4be4-4431-8d94-07e8a098b2da');
+
+-- Called without filter (all exercises)
+SELECT get_flag_statistics(NULL);
+```
+
+The stats API (`/api/flags/admin/stats`) passes the `exercise_id` query param to the RPC call. The flags page re-fetches stats whenever the exercise filter changes.
+
+**SQL file:** `database/get_flag_statistics.sql`
+
+---
+
+*Last Updated: March 27, 2026*

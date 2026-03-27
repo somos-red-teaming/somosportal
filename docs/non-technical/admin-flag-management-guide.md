@@ -189,4 +189,16 @@ Categories are defined in **Flag Packages** and can be customized per exercise.
 
 ---
 
-*Last Updated: March 13, 2026*
+## Stats Filtering by Exercise
+
+The analytics charts at the top of the page now update when you select an exercise from the filter dropdown. Previously, charts always showed aggregated data across all exercises.
+
+This means you can:
+- Select an exercise → charts show only that exercise's data
+- Clear the filter → charts show all flags again
+
+**Tip:** Use this to compare harm patterns across different exercises during review sessions.
+
+---
+
+*Last Updated: March 27, 2026*

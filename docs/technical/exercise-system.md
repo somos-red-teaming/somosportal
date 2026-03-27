@@ -307,4 +307,24 @@ users (1) → (many) exercise_participation
 
 ---
 
-*Exercise System Technical Documentation - Week 5-6 Complete*
+## Model Selector (Updated March 2026)
+
+The exercise creation form fetches all active models from `ai_models` table and displays them in a scrollable checkbox list. Each row shows the display name and `provider/model_id`.
+
+```typescript
+// Query: all active models, ordered by provider then name
+const { data } = await supabase
+  .from('ai_models')
+  .select('id, name, display_name, provider, model_id, temperature')
+  .eq('is_active', true)
+  .order('provider')
+  .order('name')
+```
+
+Selected models are assigned to exercises via the `exercise_models` junction table with blind names and optional temperature overrides.
+
+**File:** `app/admin/exercises/page.tsx`
+
+---
+
+*Exercise System Technical Documentation - Updated March 27, 2026*

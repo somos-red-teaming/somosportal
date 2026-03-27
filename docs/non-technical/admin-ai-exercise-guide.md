@@ -65,9 +65,10 @@ This is the core of AI integration - selecting which AI models participants will
 - **Anthropic Claude 3** - Requires API credits
 
 **Selection Process:**
-1. Click on model badges to select/deselect
-2. Selected models appear highlighted in blue
-3. **Real-time Preview** shows blind name assignments:
+1. Scroll through the checkbox list of all active models
+2. Check/uncheck models to select or deselect them
+3. Each row shows the model display name and `provider/model_id` for clarity
+4. **Real-time Preview** shows blind name assignments and temperature controls:
 
 ```
 Google Gemini 2.5 Flash → Alpha
