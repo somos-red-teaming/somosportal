@@ -7,7 +7,7 @@ import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Users, FileText, Flag, Activity, Bot, Code, TestTube, Download, MessageSquare, UsersRound } from 'lucide-react'
+import { Users, FileText, Flag, Activity, Bot, Code, TestTube, Download, MessageSquare, UsersRound, Sparkles } from 'lucide-react'
 
 interface Stats {
   users: number
@@ -140,6 +140,18 @@ export default function AdminDashboard() {
                   <Button asChild><Link href="/admin/flags">Manage Flags</Link></Button>
                   <Button variant="outline" asChild><Link href="/admin/flag-packages">Packages</Link></Button>
                 </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5" />
+                  Deliberation Map
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">Visualize flag clusters for deliberation sessions.</p>
+                <Button asChild><Link href="/admin/deliberation">View Map</Link></Button>
               </CardContent>
             </Card>
             <Card>

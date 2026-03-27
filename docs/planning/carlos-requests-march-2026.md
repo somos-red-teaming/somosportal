@@ -17,7 +17,7 @@ When filtering flags by exercise on the admin flags page, the data viz charts st
 ### Files
 - `app/admin/flags/page.tsx` - Pass exercise filter to stats fetch
 - `app/api/flags/admin/stats/route.ts` - Accept exercise_id query param
-- `database/functions/get_flag_statistics.sql` - Add WHERE clause for exercise_id
+- `database/get_flag_statistics.sql` - Add WHERE clause for exercise_id
 
 ---
 
@@ -62,17 +62,23 @@ Visual tool for deliberation sessions. Shows flagged harms as a constellation/ne
 
 ## TODO
 
-- [ ] **Stats filter:** Update SQL function to accept exercise_id param
-- [ ] **Stats filter:** Update stats API to pass exercise_id
-- [ ] **Stats filter:** Update flags page to send exercise filter to stats fetch
-- [ ] **Stats filter:** Test charts update when exercise selected
-- [ ] **Stats filter:** Push and verify on preview
-- [ ] **Constellation:** Create `/admin/deliberation/` page layout (dark theme)
-- [ ] **Constellation:** Build cluster data API endpoint
-- [ ] **Constellation:** Adapt D3 force graph component for flags data
-- [ ] **Constellation:** Add SOMOS brand colors and severity sizing
-- [ ] **Constellation:** Add hover tooltips (flag details)
-- [ ] **Constellation:** Add click-to-drill into clusters
-- [ ] **Constellation:** Add exercise selector dropdown
-- [ ] **Constellation:** Test with real flag data
-- [ ] **Constellation:** Push and verify on preview
+- [x] **Stats filter:** Update SQL function to accept exercise_id param
+- [x] **Stats filter:** Update stats API to pass exercise_id
+- [x] **Stats filter:** Update flags page to send exercise filter to stats fetch
+- [x] **Stats filter:** Test charts update when exercise selected
+- [x] **Stats filter:** Push and verify on preview
+- [x] **Constellation:** Create `/admin/deliberation/` page layout (dark theme)
+- [x] **Constellation:** Build cluster data API endpoint
+- [x] **Constellation:** Adapt D3 force graph component for flags data
+- [x] **Constellation:** Add SOMOS brand colors and severity sizing
+- [x] **Constellation:** Add hover tooltips (flag details)
+- [x] **Constellation:** Add click-to-drill into clusters
+- [x] **Constellation:** Add exercise selector dropdown
+- [x] **Constellation:** Test with real flag data
+- [x] **Constellation:** Push and verify on preview
+- [ ] **Security:** Add server-side admin auth to `/api/flags/admin/*` (clusters, stats, route) - currently uses service role key without verifying caller is admin
+- [ ] **Security:** Add server-side admin auth to `/api/export/*` (flags, exercises, interactions) - same issue
+- [x] **Security:** Remove console.log from deliberation page fetchClusters (leaks prompt/response snippets)
+- [ ] **Polish:** Tighten cluster force so nodes stay closer to labels
+- [ ] **Polish:** Add glow/pulse on high severity nodes
+- [x] **Polish:** Add nav links to admin page and dashboard
