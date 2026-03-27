@@ -92,7 +92,9 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
       return () => {}
     }
 
-    const tooltip = d3.select(tooltipRef.current)
+    const tooltipEl = tooltipRef.current
+    if (!tooltipEl) return
+    const tooltip = d3.select<HTMLDivElement, unknown>(tooltipEl)
 
     // Read theme colors from CSS variables
     const styles = getComputedStyle(container)
@@ -151,15 +153,17 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
       .map(l => ({ source: l.source, target: l.target }))
 
     // Cluster centers for force grouping
-    type ClusterCenter = { x: number; y: number; angle: number }
+    type ClusterCenter = { x: number; y: number; angle: number; orbitRadius: number }
     const clusterCenters = new Map<string, ClusterCenter>()
+    const orbitRing = Math.min(width, height) * 0.24
     clusters.forEach((c, i) => {
       const angle = (i / Math.max(1, clusters.length)) * 2 * Math.PI
-      const r = Math.min(width, height) * 0.3
+      const r = orbitRing
       clusterCenters.set(c.id, {
         x: width / 2 + Math.cos(angle) * r,
         y: height / 2 + Math.sin(angle) * r,
         angle,
+        orbitRadius: r,
       })
     })
 
@@ -169,12 +173,21 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
       .force('charge', d3.forceManyBody().strength(-15).distanceMax(150))
       .force('collision', d3.forceCollide<SimNode>().radius(d => d.radius + 1))
       .force('cluster', (alpha: number) => {
-        // Custom force: pull nodes toward their cluster center
         for (const node of simNodes) {
           const center = clusterCenters.get(node.category)
-          if (center && node.x !== undefined && node.y !== undefined) {
-            node.vx = (node.vx || 0) + (center.x - node.x) * alpha * 0.15
-            node.vy = (node.vy || 0) + (center.y - node.y) * alpha * 0.15
+          if (!center || node.x === undefined || node.y === undefined) continue
+          const dx = center.x - node.x
+          const dy = center.y - node.y
+          const distance = Math.sqrt(dx * dx + dy * dy) || 1
+          const basePull = alpha * 0.35
+          node.vx = (node.vx || 0) + dx * basePull
+          node.vy = (node.vy || 0) + dy * basePull
+
+          const maxDistance = center.orbitRadius * 0.75
+          if (distance > maxDistance) {
+            const clampPull = ((distance - maxDistance) / distance) * alpha * 0.45
+            node.vx += dx * clampPull
+            node.vy += dy * clampPull
           }
         }
       })
@@ -197,10 +210,46 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
       .attr('stroke-width', 0.5)
 
     // Nodes
-    const nodeElements = zoomGroup.append('g')
-      .selectAll('circle')
+    const nodeWrapper = zoomGroup.append('g')
+    const nodeElements = nodeWrapper
+      .selectAll('g')
       .data(simNodes)
-      .enter().append('circle')
+      .enter()
+      .append('g')
+      .style('cursor', 'pointer')
+      .attr('opacity', 1)
+
+    nodeElements
+      .filter(d => d.severity >= 10)
+      .append('circle')
+      .attr('r', d => d.radius * 0.6)
+      .attr('fill', '#ff1f5a')
+      .attr('fill-opacity', 0.7)
+      .attr('stroke', '#ffb4c7')
+      .attr('stroke-width', 1)
+      .attr('filter', 'url(#node-glow)')
+      .each(function (d) {
+        const circle = d3.select(this)
+        const base = d.radius * 0.6
+        circle.append('animate')
+          .attr('attributeName', 'r')
+          .attr('values', `${base}; ${base * 2.4}; ${base}`)
+          .attr('dur', '1.6s')
+          .attr('repeatCount', 'indefinite')
+        circle.append('animate')
+          .attr('attributeName', 'fill-opacity')
+          .attr('values', '0.7; 0.15; 0.7')
+          .attr('dur', '1.6s')
+          .attr('repeatCount', 'indefinite')
+        circle.append('animate')
+          .attr('attributeName', 'stroke-opacity')
+          .attr('values', '0.8; 0; 0.8')
+          .attr('dur', '1.6s')
+          .attr('repeatCount', 'indefinite')
+      })
+
+    const mainCircles = nodeElements
+      .append('circle')
       .attr('r', d => d.radius)
       .attr('fill', d => d.color)
       .attr('fill-opacity', 0.8)
@@ -208,37 +257,71 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
       .attr('stroke-opacity', 0.3)
       .attr('stroke-width', 1)
       .attr('filter', d => d.severity >= 8 ? 'url(#node-glow)' : null)
-      .style('cursor', 'pointer')
-      .call(d3.drag<SVGCircleElement, SimNode>()
-        .on('start', (event, d) => {
-          if (!event.active) simulation.alphaTarget(0.1).restart()
-          d.fx = d.x; d.fy = d.y
-        })
-        .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y })
-        .on('end', (event, d) => {
-          if (!event.active) simulation.alphaTarget(0)
-          d.fx = null; d.fy = null
-        })
-      )
+
+    nodeElements.call(d3.drag<SVGGElement, SimNode>()
+      .on('start', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0.1).restart()
+        d.fx = d.x; d.fy = d.y
+      })
+      .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y })
+      .on('end', (event, d) => {
+        if (!event.active) simulation.alphaTarget(0)
+        d.fx = null; d.fy = null
+      })
+    )
 
     // Hover tooltip
-    nodeElements
+    const clampPosition = (event: MouseEvent, tooltipElement: HTMLDivElement) => {
+      const padding = 8
+      const tooltipWidth = tooltipElement.offsetWidth || 200
+      const tooltipHeight = tooltipElement.offsetHeight || 120
+
+      let x = event.pageX + padding
+      let y = event.pageY - padding
+
+      if (x + tooltipWidth + padding > window.innerWidth) {
+        x = event.pageX - tooltipWidth - padding
+      }
+      if (x < padding) {
+        x = padding
+      }
+
+      const viewportBottom = window.scrollY + window.innerHeight
+      if (y + tooltipHeight > viewportBottom - padding) {
+        y = viewportBottom - tooltipHeight - padding
+      }
+      if (y < window.scrollY + padding) {
+        y = window.scrollY + padding
+      }
+
+      return { x, y }
+    }
+
+    mainCircles
       .on('mouseover', (event, d) => {
         d3.select(event.currentTarget)
           .transition().duration(150)
           .attr('r', d.radius * 1.8)
           .attr('fill-opacity', 1)
 
+        const position = clampPosition(event, tooltipEl)
+
         tooltip
           .style('display', 'block')
-          .style('left', `${event.pageX + 12}px`)
-          .style('top', `${event.pageY - 12}px`)
+          .style('left', `${position.x}px`)
+          .style('top', `${position.y}px`)
           .html(`
             <div class="font-medium">${categoryLabels[d.category] || d.category}</div>
             <div class="text-xs opacity-70 mt-1">Severity: ${d.severity}/10 · ${d.modelName}</div>
             <div class="text-xs opacity-70">${d.exerciseTitle}</div>
             ${d.promptPreview ? `<div class="text-xs mt-1 opacity-50">"${d.promptPreview}..."</div>` : ''}
           `)
+      })
+      .on('mousemove', (event) => {
+        const position = clampPosition(event, tooltipEl)
+        tooltip
+          .style('left', `${position.x}px`)
+          .style('top', `${position.y}px`)
       })
       .on('mouseout', (event, d) => {
         d3.select(event.currentTarget)
@@ -319,9 +402,7 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
         .attr('x2', (d: any) => d.target.x)
         .attr('y2', (d: any) => d.target.y)
 
-      nodeElements
-        .attr('cx', d => d.x!)
-        .attr('cy', d => d.y!)
+      nodeElements.attr('transform', d => `translate(${d.x || 0}, ${d.y || 0})`)
     })
 
     // Cool down faster for large datasets

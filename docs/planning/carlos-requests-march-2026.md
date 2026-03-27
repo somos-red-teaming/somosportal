@@ -76,10 +76,10 @@ Visual tool for deliberation sessions. Shows flagged harms as a constellation/ne
 - [x] **Constellation:** Add exercise selector dropdown
 - [x] **Constellation:** Test with real flag data
 - [x] **Constellation:** Push and verify on preview
-- [ ] **Security:** Add server-side admin auth to `/api/flags/admin/*` (clusters, stats, route) - currently uses service role key without verifying caller is admin
-- [ ] **Security:** Add server-side admin auth to `/api/export/*` (flags, exercises, interactions) - same issue
+- [x] **Security:** Add server-side admin auth to `/api/flags/admin/*` (clusters, stats, route) - currently uses service role key without verifying caller is admin
+- [x] **Security:** Add server-side admin auth to `/api/export/*` (flags, exercises, interactions) - same issue
 - [x] **Security:** Remove console.log from deliberation page fetchClusters (leaks prompt/response snippets)
-- [ ] **Polish:** Tighten cluster force so nodes stay closer to labels
+- [x] **Polish:** Tighten cluster force so nodes stay closer to labels
 - [x] **Polish:** Add glow/pulse on high severity nodes
 - [x] **Polish:** Add nav links to admin page and dashboard
 - [x] **Polish:** Expand node severity scale (4–28px) for clearer sizing
@@ -87,4 +87,4 @@ Visual tool for deliberation sessions. Shows flagged harms as a constellation/ne
 - [x] **Polish:** Create legend pills with percent badges and severity scale row
 - [x] **Polish:** Add curved connectors from clusters to labels
 - [x] **Polish:** Add gradient + starfield background for constellation canvas
-- [ ] **Feature:** Add right-hand slide-out with cluster details (deferred)
+- [x] **Feature:** Add right-hand slide-out with cluster details

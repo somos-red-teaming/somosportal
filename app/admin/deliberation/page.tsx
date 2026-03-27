@@ -6,6 +6,7 @@ import { AdminRoute } from '@/components/AdminRoute'
 import ConstellationGraph from '@/components/ConstellationGraph'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { ArrowLeft, Maximize2, Minimize2 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -61,10 +62,18 @@ const CLUSTER_COLORS = [
   '#E8B8D4',
 ]
 
-const SEVERITY_LEGEND = [
-  { label: 'Notice', severity: 2 },
-  { label: 'Watch', severity: 5 },
-  { label: 'Critical', severity: 9 },
+type SeverityBucketKey = 'low' | 'warning' | 'critical'
+
+const SEVERITY_LEGEND: Array<{
+  key: SeverityBucketKey
+  label: string
+  severity: number
+  color: string
+  description: string
+}> = [
+  { key: 'low', label: 'Low', severity: 2, color: '#34d399', description: 'Severity 1–4 · Informational signals to track patterns.' },
+  { key: 'warning', label: 'Warning', severity: 5, color: '#facc15', description: 'Severity 5–7 · Medium risk issues that need monitoring.' },
+  { key: 'critical', label: 'Critical', severity: 9, color: '#f87171', description: 'Severity 8–10 · High risk flags that require immediate attention.' },
 ]
 
 const getLegendRadius = (severity: number) => {
@@ -139,6 +148,21 @@ export default function DeliberationPage() {
     : clusters
   const totalClusterFlags = clusters.reduce((sum, c) => sum + c.totalCount, 0)
   const exerciseSelectValue = exerciseId || 'all'
+  const selectedClusterData = selectedCluster ? clusters.find(c => c.id === selectedCluster) || null : null
+  const selectedClusterNodes = selectedCluster ? nodes.filter(n => n.category === selectedCluster) : []
+  const severityBuckets = selectedClusterNodes.reduce<Record<SeverityBucketKey, number>>(
+    (acc, node) => {
+      if (node.severity >= 8) acc.critical++
+      else if (node.severity >= 5) acc.warning++
+      else acc.low++
+      return acc
+    },
+    { critical: 0, warning: 0, low: 0 }
+  )
+  const highlightedNodes = [...selectedClusterNodes]
+    .sort((a, b) => b.severity - a.severity)
+    .slice(0, 5)
+  const severityBandsDisplay = [...SEVERITY_LEGEND].reverse()
 
   return (
     <AdminRoute>
@@ -171,7 +195,7 @@ export default function DeliberationPage() {
                       )}
                     </div>
                     <p className="text-sm text-white/70 max-w-2xl">
-                      Active harms constellation for facilitators. Choose an exercise to scope the clusters before you guide the room.
+                      Active harms constellation for facilitators. Choose an exercise to scope the clusters.
                     </p>
                   </div>
                 </div>
@@ -265,17 +289,24 @@ export default function DeliberationPage() {
               {SEVERITY_LEGEND.map(stop => {
                 const diameter = getLegendRadius(stop.severity) * 2
                 return (
-                  <div key={stop.label} className="flex items-center gap-3 text-sm">
-                    <span className="text-white/60">{stop.label}</span>
-                    <span
-                      className="rounded-full border border-white/30 bg-white/10 block"
-                      style={{
-                        width: `${diameter}px`,
-                        height: `${diameter}px`,
-                        boxShadow: stop.severity >= 8 ? '0 0 18px rgba(250,187,163,0.6)' : '0 0 12px rgba(255,255,255,0.15)',
-                      }}
-                    />
-                  </div>
+                  <Tooltip key={stop.label}>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-3 text-sm cursor-help">
+                        <span className="text-white/60">{stop.label}</span>
+                        <span
+                          className="rounded-full border border-white/30 bg-white/10 block"
+                          style={{
+                            width: `${diameter}px`,
+                            height: `${diameter}px`,
+                            boxShadow: stop.severity >= 8 ? '0 0 18px rgba(250,187,163,0.6)' : '0 0 12px rgba(255,255,255,0.15)',
+                          }}
+                        />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-white text-black text-xs px-3 py-2">
+                      {stop.description}
+                    </TooltipContent>
+                  </Tooltip>
                 )
               })}
             </div>
@@ -283,14 +314,14 @@ export default function DeliberationPage() {
           </div>
         </div>
 
-        {/* Graph */}
-        <div className="flex-1 relative" style={{ minHeight: 'calc(100vh - 200px)' }}>
-          {loading && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center text-white/50">
-              Loading constellation...
-            </div>
-          )}
-          <div className="absolute inset-0">
+        {/* Graph + Details */}
+        <div className="flex-1 relative flex flex-col lg:flex-row" style={{ minHeight: 'calc(100vh - 200px)' }}>
+          <div className="relative flex-1">
+            {loading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center text-white/50">
+                Loading constellation...
+              </div>
+            )}
             <ConstellationGraph
               clusters={visibleClusters}
               nodes={visibleNodes}
@@ -298,6 +329,98 @@ export default function DeliberationPage() {
               onClusterClick={handleClusterClick}
             />
           </div>
+
+          {selectedClusterData && (
+            <aside className="w-full lg:w-96 border-t lg:border-t-0 lg:border-l border-white/10 bg-[#090912] text-white flex flex-col">
+              <div className="flex items-start justify-between p-4 border-b border-white/5">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-white/50">Cluster</p>
+                  <h3 className="text-lg font-semibold">{categoryLabels[selectedClusterData.id] || selectedClusterData.id}</h3>
+                  <p className="text-sm text-white/60">{selectedClusterData.totalCount} flags · avg severity {selectedClusterData.avgSeverity}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedCluster(null)}
+                  className="text-white/60 hover:text-white rounded-full"
+                >
+                  ✕
+                </Button>
+              </div>
+
+              <div className="p-4 space-y-5 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wide text-white/50">Flags</p>
+                    <p className="text-2xl font-semibold">{selectedClusterData.totalCount}</p>
+                  </div>
+                  <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-wide text-white/50">Nodes visualized</p>
+                    <p className="text-2xl font-semibold">{selectedClusterData.nodeCount}</p>
+                  </div>
+                  <div className="rounded-3xl border border-white/10 bg-white/5 px-4 py-3 col-span-2">
+                    <p className="text-[11px] uppercase tracking-wide text-white/50">Status mix</p>
+                    <p className="text-base text-white/80">{selectedClusterNodes.filter(n => n.status === 'resolved').length} resolved · {selectedClusterNodes.filter(n => n.status === 'pending').length} open</p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-white/50 mb-2">Severity mix</p>
+                  <div className="space-y-2">
+                    {severityBandsDisplay.map(bucket => {
+                      const value = severityBuckets[bucket.key]
+                      return (
+                        <Tooltip key={bucket.label}>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-3 cursor-help">
+                              <span className="text-sm text-white/70 w-16">{bucket.label}</span>
+                              <div className="flex-1 h-2 rounded-full bg-white/10">
+                                <div
+                                  className="h-full rounded-full"
+                                  style={{
+                                    width: selectedClusterNodes.length ? `${(value / selectedClusterNodes.length) * 100}%` : '0%',
+                                    backgroundColor: bucket.color,
+                                  }}
+                                />
+                              </div>
+                              <span className="text-xs text-white/60 w-8 text-right">{value}</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="bg-white text-black text-xs px-3 py-2">
+                            {bucket.description}
+                          </TooltipContent>
+                        </Tooltip>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[11px] uppercase tracking-wide text-white/50 mb-3">Top prompts</p>
+                  <div className="space-y-3">
+                    {highlightedNodes.length === 0 && (
+                      <p className="text-sm text-white/50">No nodes within this cluster yet.</p>
+                    )}
+                    {highlightedNodes.map(node => (
+                      <div key={node.id} className="rounded-2xl border border-white/10 bg-white/5 p-3 space-y-2">
+                        <div className="flex items-center justify-between text-xs text-white/60">
+                          <span>Severity {node.severity}</span>
+                          <span className="uppercase tracking-wide">{node.status}</span>
+                        </div>
+                        {node.promptPreview && (
+                          <p className="text-sm text-white/80">&ldquo;{node.promptPreview}...&rdquo;</p>
+                        )}
+                        {node.responsePreview && (
+                          <p className="text-xs text-white/50">AI: {node.responsePreview}...</p>
+                        )}
+                        <p className="text-xs text-white/40">{node.modelName} · {node.exerciseTitle}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </aside>
+          )}
         </div>
 
         {/* Summary bar */}
