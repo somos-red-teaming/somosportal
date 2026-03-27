@@ -272,29 +272,31 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
 
     // Hover tooltip
     const clampPosition = (event: MouseEvent, tooltipElement: HTMLDivElement) => {
-      const padding = 8
+      const padding = 12
       const tooltipWidth = tooltipElement.offsetWidth || 200
       const tooltipHeight = tooltipElement.offsetHeight || 120
+      const scrollX = window.scrollX
+      const scrollY = window.scrollY
 
-      let x = event.pageX + padding
-      let y = event.pageY - padding
+      let x = event.clientX + padding
+      let y = event.clientY - padding
 
       if (x + tooltipWidth + padding > window.innerWidth) {
-        x = event.pageX - tooltipWidth - padding
+        x = event.clientX - tooltipWidth - padding
       }
       if (x < padding) {
         x = padding
       }
 
-      const viewportBottom = window.scrollY + window.innerHeight
+      const viewportBottom = window.innerHeight
       if (y + tooltipHeight > viewportBottom - padding) {
         y = viewportBottom - tooltipHeight - padding
       }
-      if (y < window.scrollY + padding) {
-        y = window.scrollY + padding
+      if (y < padding) {
+        y = padding
       }
 
-      return { x, y }
+      return { x: x + scrollX, y: y + scrollY }
     }
 
     mainCircles
