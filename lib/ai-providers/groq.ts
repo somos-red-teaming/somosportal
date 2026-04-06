@@ -62,7 +62,18 @@ export class GroqProvider implements AIProvider {
         }
 
         const data = await response.json()
+        
+        // Guard against empty or malformed response
+        if (!Array.isArray(data.choices) || !data.choices.length) {
+          lastError = new Error(`${model}: Empty choices array`)
+          continue
+        }
+
         const choice = data.choices[0]
+        if (!choice.message?.content) {
+          lastError = new Error(`${model}: No message content`)
+          continue
+        }
 
         return {
           id: data.id,
@@ -89,8 +100,6 @@ export class GroqProvider implements AIProvider {
 
   async testConnection(modelId?: string): Promise<boolean> {
     try {
-      console.log('Testing Groq API with key:', this.apiKey ? 'Key present' : 'No key')
-      
       const response = await fetch(`${this.baseURL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -104,19 +113,31 @@ export class GroqProvider implements AIProvider {
         }),
       })
       
-      console.log('Groq API response status:', response.status)
-      
       if (!response.ok) {
         const errorText = await response.text()
-        console.error('Groq API error response:', errorText)
-        throw new Error(errorText)
+        throw new AIProviderError(
+          `Groq API error: ${response.statusText}`,
+          'groq',
+          errorText,
+          response.status
+        )
       }
       
-      console.log('Groq test successful')
+      const data = await response.json()
+      if (!Array.isArray(data.choices) || !data.choices.length) {
+        throw new AIProviderError(
+          'Groq API returned empty choices',
+          'groq'
+        )
+      }
+      
       return true
     } catch (error) {
-      console.error('Groq API test connection error:', error)
-      throw error
+      if (error instanceof AIProviderError) throw error
+      throw new AIProviderError(
+        `Groq test connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'groq'
+      )
     }
   }
 }
