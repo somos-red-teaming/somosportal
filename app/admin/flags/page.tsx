@@ -337,6 +337,11 @@ export default function AdminFlagsPage() {
                   <option value="">All Exercises</option>
                   {exercises.map(ex => <option key={ex.id} value={ex.id}>{ex.title}</option>)}
                 </select>
+                {exerciseFilter && (
+                  <span className="text-sm text-muted-foreground">
+                    Filtered to: {exercises.find(ex => ex.id === exerciseFilter)?.title}
+                  </span>
+                )}
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => exportFlags('csv')}><Download className="h-4 w-4 mr-1" />CSV</Button>
                   <Button variant="outline" size="sm" onClick={() => exportFlags('json')}><Download className="h-4 w-4 mr-1" />JSON</Button>
@@ -459,7 +464,8 @@ export default function AdminFlagsPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Submitted By</p>
-                    <p>{selectedFlag.user?.email || '-'}</p>
+                    <p className="font-medium">{selectedFlag.user?.full_name || 'Unknown'}</p>
+                    <p className="text-sm text-muted-foreground">{selectedFlag.user?.email || '-'}</p>
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Status</p>

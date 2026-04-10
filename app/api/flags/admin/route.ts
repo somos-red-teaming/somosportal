@@ -39,7 +39,24 @@ export async function GET(request: NextRequest) {
   if (status) query = query.eq('status', status)
   if (category) query = query.eq('category', category)
   if (search) query = query.ilike('description', `%${search}%`)
-  if (exerciseId) query = query.eq('interaction.exercise_id', exerciseId)
+  
+  // For exercise filter, we need to filter through the interaction relationship
+  let filteredFlags = null
+  if (exerciseId) {
+    // First get all interactions for this exercise
+    const { data: interactions } = await supabase
+      .from('interactions')
+      .select('id')
+      .eq('exercise_id', exerciseId)
+    
+    const interactionIds = interactions?.map(i => i.id) || []
+    if (interactionIds.length > 0) {
+      query = query.in('interaction_id', interactionIds)
+    } else {
+      // No interactions for this exercise, return empty
+      return NextResponse.json({ flags: [], total: 0 })
+    }
+  }
 
   const { data: flags, count, error } = await query
     .order('created_at', { ascending: false })
