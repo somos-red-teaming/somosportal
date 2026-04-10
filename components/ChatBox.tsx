@@ -8,10 +8,11 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Slider } from '@/components/ui/slider'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Send, User, Bot, Copy, Image, Flag, Settings2, X, Plus, History, MessageSquare } from 'lucide-react'
+import { Send, User, Bot, Copy, Image, Flag, Settings2, X, Plus, History, MessageSquare, Paperclip, FileText } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeRaw from 'rehype-raw'
 import { TimerDisplay } from './TimerDisplay'
 import { createClient } from '@/lib/supabase/client'
 
@@ -35,7 +36,8 @@ interface Message {
   type: 'user' | 'ai'
   content: string
   timestamp: Date
-  imageUrl?: string // Add optional image URL for image messages
+  imageUrl?: string
+  attachedFile?: string // File name if file was attached
 }
 
 interface ChatBoxProps {
@@ -77,9 +79,12 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [attachedFile, setAttachedFile] = useState<{ name: string; content: string } | null>(null)
+  const [expandedFileId, setExpandedFileId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   // Session ID for grouping conversation
   const [sessionId, setSessionId] = useState(() => crypto.randomUUID())
@@ -127,6 +132,59 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
   // Flag categories (loaded from exercise package or default)
   const [flagCategoryOptions, setFlagCategoryOptions] = useState(defaultFlagCategories)
 
+  // Parse file content into formatted text
+  const parseFile = useCallback((file: File): Promise<{ name: string; content: string }> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const text = e.target?.result as string
+          const ext = file.name.split('.').pop()?.toLowerCase()
+          
+          let formatted = text
+          if (ext === 'csv') {
+            // Parse CSV into markdown table
+            const lines = text.trim().split('\n')
+            if (lines.length > 0) {
+              const headers = lines[0].split(',').map(h => h.trim())
+              const rows = lines.slice(1).map(line => line.split(',').map(cell => cell.trim()))
+              
+              formatted = `\n| ${headers.join(' | ')} |\n| ${headers.map(() => '---').join(' | ')} |\n`
+              formatted += rows.map(row => `| ${row.join(' | ')} |`).join('\n') + '\n'
+            }
+          }
+          
+          resolve({ name: file.name, content: formatted })
+        } catch (error) {
+          reject(error)
+        }
+      }
+      reader.onerror = () => reject(new Error('Failed to read file'))
+      reader.readAsText(file)
+    })
+  }, [])
+
+  // Handle file selection
+  const handleFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    // Limit to 500KB
+    if (file.size > 500000) {
+      alert('File too large (max 500KB)')
+      return
+    }
+    
+    try {
+      const parsed = await parseFile(file)
+      setAttachedFile(parsed)
+    } catch (error) {
+      alert('Failed to read file')
+    }
+    
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }, [parseFile])
+
   // Load history filtered by current session (check cache first)
   useEffect(() => {
     // Check cache first
@@ -140,11 +198,14 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
       )
       const history: Message[] = []
       filtered.forEach((interaction: any) => {
+        // Detect attached file from prompt format: [File: name]\n...\n[User message]\n...
+        const fileMatch = interaction.prompt.match(/^\[File: (.+?)\]/)
         history.push({
           id: `${interaction.id}-user`,
           type: 'user',
           content: interaction.prompt,
-          timestamp: new Date(interaction.created_at)
+          timestamp: new Date(interaction.created_at),
+          attachedFile: fileMatch ? fileMatch[1] : undefined
         })
         if (interaction.response) {
           if (interaction.response.startsWith('storage:')) {
@@ -470,15 +531,27 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return
 
+    // Prepend file content if attached (truncate to ~4000 chars to avoid payload limits)
+    let fullPrompt = inputMessage.trim()
+    if (attachedFile) {
+      const maxFileChars = 4000
+      const truncatedContent = attachedFile.content.length > maxFileChars
+        ? attachedFile.content.slice(0, maxFileChars) + '\n... (truncated)'
+        : attachedFile.content
+      fullPrompt = `[File: ${attachedFile.name}]\n${truncatedContent}\n\n[User message]\n${fullPrompt}`
+    }
+
     const userMessage: Message = {
       id: `user-${Date.now()}`,
       type: 'user',
-      content: inputMessage.trim(),
-      timestamp: new Date()
+      content: fullPrompt,
+      timestamp: new Date(),
+      attachedFile: attachedFile?.name
     }
 
     setMessages(prev => [...prev, userMessage])
     setInputMessage('')
+    setAttachedFile(null)
     setIsLoading(true)
 
     try {
@@ -488,7 +561,7 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
         body: JSON.stringify({
           exerciseId,
           modelId,
-          prompt: userMessage.content,
+          prompt: fullPrompt,
           userId,
           conversationId: sessionId,
           history: messages.map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: m.content }))
@@ -870,16 +943,46 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
                 >
                   <div className="text-xs sm:text-sm min-w-0 max-w-full overflow-hidden">
                     {message.type === 'user' ? (
-                      <p
-                        className="whitespace-pre-wrap break-words hyphens-auto min-w-0 leading-relaxed"
-                        style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
-                      >
-                        {message.content}
-                      </p>
+                      <>
+                        {message.attachedFile && (
+                          <div className="mb-1">
+                            <button
+                              onClick={() => setExpandedFileId(expandedFileId === message.id ? null : message.id)}
+                              className="flex items-center gap-1 text-blue-200 hover:text-white text-[10px]"
+                            >
+                              <span>{expandedFileId === message.id ? '▼' : '▶'}</span>
+                              <Paperclip className="h-2.5 w-2.5" />
+                              <span>{message.attachedFile}</span>
+                            </button>
+                            {expandedFileId === message.id && (() => {
+                              const raw = message.content
+                              const withoutHeader = raw.replace(/^\[File: .+?\]\n/, '')
+                              const fileOnly = withoutHeader.split('\n\n[User message]\n')[0] || withoutHeader.split('[User message]\n')[0] || withoutHeader
+                              return (
+                                <div className="mt-1 p-2 bg-blue-600/30 rounded text-[10px] text-blue-100 max-h-48 overflow-y-auto">
+                                  <div className="prose prose-xs max-w-none prose-invert">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={markdownComponents}>
+                                      {fileOnly.trim()}
+                                    </ReactMarkdown>
+                                  </div>
+                                </div>
+                              )
+                            })()}
+                          </div>
+                        )}
+                        <p
+                          className="whitespace-pre-wrap break-words hyphens-auto min-w-0 leading-relaxed"
+                          style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
+                        >
+                          {message.content.includes('[User message]\n')
+                            ? message.content.split('[User message]\n').pop()
+                            : message.content}
+                        </p>
+                      </>
                     ) : (
                       <>
                         <div className="prose prose-sm max-w-none dark:prose-invert min-w-0 overflow-hidden">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={markdownComponents}>
                             {message.content}
                           </ReactMarkdown>
                         </div>
@@ -981,8 +1084,28 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
                 Create image
                 {imageMode && <span className="ml-2 text-primary">✓</span>}
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
+                <Paperclip className="h-4 w-4 mr-2" />
+                Attach file
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.txt,.json,.md"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          {attachedFile && (
+            <div className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900 rounded text-xs text-green-700 dark:text-green-300">
+              <FileText className="h-3 w-3" />
+              <span className="truncate max-w-[80px]">{attachedFile.name}</span>
+              <button onClick={() => setAttachedFile(null)} className="ml-1 hover:bg-green-200 dark:hover:bg-green-800 rounded">
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
           {imageMode && (
             <div className="flex items-center gap-1 px-2 py-1 bg-primary/10 rounded text-xs text-primary">
               <Image className="h-3 w-3" />

@@ -46,8 +46,8 @@ export class GroqProvider implements AIProvider {
           }),
         })
 
-        // If rate limited (429) or server error (5xx), try next model
-        if (response.status === 429 || response.status >= 500) {
+        // If rate limited (429), payload too large (413), or server error (5xx), try next model
+        if (response.status === 429 || response.status === 413 || response.status >= 500) {
           lastError = new Error(`${model}: ${response.status}`)
           continue
         }
