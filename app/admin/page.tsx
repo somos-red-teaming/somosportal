@@ -7,7 +7,7 @@ import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Users, FileText, Flag, Activity, Bot, Code, TestTube, Download, MessageSquare, UsersRound, Sparkles } from 'lucide-react'
+import { Users, FileText, Flag, Activity, Bot, Code, TestTube, Download, MessageSquare, UsersRound, Sparkles, Database } from 'lucide-react'
 
 interface Stats {
   users: number
@@ -18,6 +18,25 @@ interface Stats {
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats>({ users: 0, exercises: 0, flags: 0, interactions: 0 })
+  const [backupStatus, setBackupStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [showBackupConfirm, setShowBackupConfirm] = useState(false)
+
+  const triggerBackup = async () => {
+    setBackupStatus('loading')
+    try {
+      const res = await fetch('/api/admin/backup', { method: 'POST' })
+      if (res.ok) {
+        setBackupStatus('success')
+        setTimeout(() => setBackupStatus('idle'), 5000)
+      } else {
+        setBackupStatus('error')
+        setTimeout(() => setBackupStatus('idle'), 5000)
+      }
+    } catch {
+      setBackupStatus('error')
+      setTimeout(() => setBackupStatus('idle'), 5000)
+    }
+  }
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -205,9 +224,54 @@ export default function AdminDashboard() {
                 <Button className="bg-green-600 hover:bg-green-700" asChild><Link href="/api-docs">View API Docs</Link></Button>
               </CardContent>
             </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <img src="/icons/data-backup.png" alt="Backup" className="h-5 w-5" />
+                  Database Backup
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">Backup database to Google Drive. Runs daily at 2 AM UTC.</p>
+                <div className="flex gap-2">
+                  <Button asChild><Link href="/admin/backups">View Backups</Link></Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowBackupConfirm(true)}
+                    disabled={backupStatus === 'loading'}
+                  >
+                    {backupStatus === 'loading' ? 'Triggering...' :
+                     backupStatus === 'success' ? '✅ Triggered' :
+                     backupStatus === 'error' ? '❌ Failed' :
+                     'Backup Now'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
+
+      {/* Backup Confirmation Dialog */}
+      {showBackupConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <Card className="w-full max-w-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <img src="/icons/data-backup.png" alt="Backup" className="h-6 w-6" />
+                Confirm Backup
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground mb-4">This will trigger a database backup to Google Drive. Continue?</p>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => setShowBackupConfirm(false)}>Cancel</Button>
+                <Button onClick={() => { setShowBackupConfirm(false); triggerBackup() }}>Yes, Backup Now</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </AdminRoute>
   )
 }

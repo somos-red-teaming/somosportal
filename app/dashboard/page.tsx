@@ -9,7 +9,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useRole } from '@/hooks/useRole'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { User, Activity, Flag, Trophy, Shield } from 'lucide-react'
+import { User, Activity, Flag, Trophy, Shield, Database } from 'lucide-react'
 
 interface UserStats {
   interactions: number
@@ -23,6 +23,18 @@ export default function DashboardPage() {
   const { isAdmin } = useRole()
   const [stats, setStats] = useState<UserStats>({ interactions: 0, flags: 0, exercises: 0, reputation: 0 })
   const [loading, setLoading] = useState(true)
+  const [backupStatus, setBackupStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+
+  const triggerBackup = async () => {
+    setBackupStatus('loading')
+    try {
+      const res = await fetch('/api/admin/backup', { method: 'POST' })
+      setBackupStatus(res.ok ? 'success' : 'error')
+    } catch {
+      setBackupStatus('error')
+    }
+    setTimeout(() => setBackupStatus('idle'), 5000)
+  }
 
   useEffect(() => {
     if (!user) return
@@ -103,6 +115,12 @@ export default function DashboardPage() {
                 <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/admin/export">Export Data</Link></Button>
                 <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/api-tester">API Tester</Link></Button>
                 <Button variant="outline" asChild className="w-full lg:w-auto"><Link href="/api-docs">API Docs</Link></Button>
+                <Button variant="outline" asChild className="w-full lg:w-auto">
+                  <Link href="/admin/backups">
+                    <Database className="h-4 w-4 mr-1" />
+                    Backups
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
           )}
