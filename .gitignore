@@ -36,7 +36,8 @@ next-env.d.ts
 .DS_Store
 .AppleDouble
 .LSOverride
-Icon?
+Icon
+!public/icons/
 ._*
 .DocumentRevisions-V100
 .fseventsd
@@ -133,3 +134,4 @@ playwright-report/
 AGENTS.md
 supabase/.temp/
 backups/
+!app/admin/backups/
