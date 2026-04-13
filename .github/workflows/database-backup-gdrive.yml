@@ -1,0 +1,73 @@
+name: Database Backup to Google Drive
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-17
+
+      - name: Create database backup
+        env:
+          PGPASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          BACKUP_FILE="somos-db-backup-$(date +%Y%m%d-%H%M%S).sql"
+          /usr/lib/postgresql/17/bin/pg_dump \
+            -h ${{ secrets.DB_HOST }} \
+            -p ${{ secrets.DB_PORT }} \
+            -d postgres \
+            -U ${{ secrets.DB_USER }} \
+            > "$BACKUP_FILE"
+          echo "BACKUP_FILE=$BACKUP_FILE" >> $GITHUB_ENV
+          echo "Backup created: $BACKUP_FILE ($(du -h $BACKUP_FILE | cut -f1))"
+
+      - name: Compress backup
+        run: |
+          gzip "$BACKUP_FILE"
+          echo "BACKUP_FILE=${BACKUP_FILE}.gz" >> $GITHUB_ENV
+          echo "Compressed: ${BACKUP_FILE}.gz ($(du -h ${BACKUP_FILE}.gz | cut -f1))"
+
+      - name: Install rclone
+        run: curl https://rclone.org/install.sh | sudo bash
+
+      - name: Configure rclone for Google Drive
+        env:
+          RCLONE_GDRIVE_TOKEN: ${{ secrets.RCLONE_GDRIVE_TOKEN }}
+        run: |
+          mkdir -p ~/.config/rclone
+          cat > ~/.config/rclone/rclone.conf << EOF
+          [gdrive]
+          type = drive
+          scope = drive.file
+          token = $RCLONE_GDRIVE_TOKEN
+          EOF
+
+      - name: Upload to Google Drive
+        env:
+          GDRIVE_FOLDER: ${{ secrets.GDRIVE_FOLDER }}
+        run: |
+          rclone copy "$BACKUP_FILE" "gdrive:${GDRIVE_FOLDER:-somos-backups}/database/" -v
+          echo "✅ Backup uploaded to Google Drive: ${GDRIVE_FOLDER:-somos-backups}/database/$BACKUP_FILE"
+
+      - name: Cleanup old backups (keep last 30 days)
+        env:
+          GDRIVE_FOLDER: ${{ secrets.GDRIVE_FOLDER }}
+        run: |
+          rclone delete "gdrive:${GDRIVE_FOLDER:-somos-backups}/database/" --min-age 30d -v
+          echo "🗑️ Cleaned up backups older than 30 days"
+
+      - name: Cleanup local files
+        if: always()
+        run: |
+          rm -f *.sql *.sql.gz
+          rm -rf ~/.config/rclone
