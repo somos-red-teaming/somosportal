@@ -47,14 +47,12 @@ jobs:
           GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
         run: |
           mkdir -p ~/.config/rclone
-          cat > ~/.config/rclone/rclone.conf << EOF
-          [gdrive]
-          type = drive
-          scope = drive
-          client_id = $GDRIVE_CLIENT_ID
-          client_secret = $GDRIVE_CLIENT_SECRET
-          token = $RCLONE_GDRIVE_TOKEN
-          EOF
+          echo "[gdrive]" > ~/.config/rclone/rclone.conf
+          echo "type = drive" >> ~/.config/rclone/rclone.conf
+          echo "scope = drive" >> ~/.config/rclone/rclone.conf
+          echo "client_id = $GDRIVE_CLIENT_ID" >> ~/.config/rclone/rclone.conf
+          echo "client_secret = $GDRIVE_CLIENT_SECRET" >> ~/.config/rclone/rclone.conf
+          echo "token = $RCLONE_GDRIVE_TOKEN" >> ~/.config/rclone/rclone.conf
 
       - name: Upload to Google Drive
         env:
