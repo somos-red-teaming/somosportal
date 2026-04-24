@@ -53,10 +53,6 @@ jobs:
           echo "client_id = $GDRIVE_CLIENT_ID" >> ~/.config/rclone/rclone.conf
           echo "client_secret = $GDRIVE_CLIENT_SECRET" >> ~/.config/rclone/rclone.conf
           echo "token = $RCLONE_GDRIVE_TOKEN" >> ~/.config/rclone/rclone.conf
-          echo "Token length: ${#RCLONE_GDRIVE_TOKEN}"
-          echo "Token starts with: ${RCLONE_GDRIVE_TOKEN:0:15}"
-          echo "Token has refresh: $(echo $RCLONE_GDRIVE_TOKEN | grep -c refresh_token)"
-          echo "Config file size: $(wc -c < ~/.config/rclone/rclone.conf)"
 
       - name: Upload to Google Drive
         env:
