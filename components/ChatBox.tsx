@@ -261,6 +261,7 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
     }
     setSessionId(newId)
     setMessages([])
+    setSuggestions([])
     setShowHistory(false)
     setHistoryPage(0)
   }
@@ -274,6 +275,7 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
       ))
     }
     setSessionId(sid)
+    setSuggestions([])
     setShowHistory(false)
   }
 
@@ -638,7 +640,6 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          modelId,
           userPrompt,
           aiResponse,
           exerciseContext: context
@@ -781,22 +782,30 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
           {modelName}
         </h3>
         <div className="flex items-center gap-2">
-          {/* Conversation history dropdown */}
+          {/* New Chat button */}
+          <Button
+            size="sm"
+            onClick={startNewConversation}
+            className="h-8 px-2 flex-shrink-0 gap-1 cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white"
+            title="Start new conversation"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span className="text-xs">New Chat</span>
+          </Button>
+
+          {/* History dropdown */}
           <DropdownMenu open={showHistory} onOpenChange={setShowHistory}>
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant="outline" className="h-8 px-2 flex-shrink-0 gap-1 cursor-pointer" title="Conversation history">
                 <History className="h-3.5 w-3.5" />
-                <span className="text-xs">Conversations{sessions.length > 0 ? ` (${sessions.length})` : ''}</span>
+                <span className="text-xs">History{sessions.length > 0 ? ` (${sessions.length})` : ''}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={startNewConversation} className="cursor-pointer gap-2 text-primary font-medium">
-                <Plus className="h-4 w-4" />
-                New Conversation
-              </DropdownMenuItem>
-              {sessions.length > 0 && (
+              {sessions.length === 0 ? (
+                <div className="px-2 py-3 text-xs text-muted-foreground text-center">No previous conversations</div>
+              ) : (
                 <>
-                  <div className="border-t my-1" />
                   {sessions
                     .slice()
                     .reverse()
