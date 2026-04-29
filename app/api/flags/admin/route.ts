@@ -41,20 +41,62 @@ export async function GET(request: NextRequest) {
   if (search) query = query.ilike('description', `%${search}%`)
   
   // For exercise filter, we need to filter through the interaction relationship
-  let filteredFlags = null
   if (exerciseId) {
-    // First get all interactions for this exercise
     const { data: interactions } = await supabase
       .from('interactions')
       .select('id')
       .eq('exercise_id', exerciseId)
     
-    const interactionIds = interactions?.map(i => i.id) || []
-    if (interactionIds.length > 0) {
+    const interactionIds = (interactions || []).map(i => i.id)
+    if (interactionIds.length === 0) {
+      return NextResponse.json({ flags: [], total: 0 })
+    }
+    // Batch in chunks of 100 to avoid URL length limits
+    if (interactionIds.length <= 100) {
       query = query.in('interaction_id', interactionIds)
     } else {
-      // No interactions for this exercise, return empty
-      return NextResponse.json({ flags: [], total: 0 })
+      // For large sets, filter client-side after fetch
+      const interactionSet = new Set(interactionIds)
+      const { data: allFlags, error: allError } = await query
+      if (allError) {
+        return NextResponse.json({ error: allError.message }, { status: 500 })
+      }
+      const filtered = (allFlags || []).filter((f: any) => f.interaction_id && interactionSet.has(f.interaction_id))
+      const paged = filtered.slice((page - 1) * limit, page * limit)
+      
+      const evidenceModelIds = paged
+        .filter((f: any) => !f.interaction && f.evidence?.modelId)
+        .map((f: any) => f.evidence.modelId)
+      let evidenceModelMap = new Map()
+      if (evidenceModelIds.length > 0) {
+        const { data: models } = await supabase
+          .from('ai_models')
+          .select('id, name, display_name')
+          .in('id', [...new Set(evidenceModelIds)])
+        evidenceModelMap = new Map(models?.map(m => [m.id, m]) || [])
+      }
+      
+      const flagsFormatted = paged.map((flag: any) => {
+        let model = null
+        if (flag.interaction?.model) {
+          model = { ...flag.interaction.model, blind_name: flag.interaction.model.display_name }
+        } else if (flag.evidence?.modelId) {
+          const m = evidenceModelMap.get(flag.evidence.modelId)
+          model = m ? { ...m, blind_name: m.display_name } : null
+        }
+        return {
+          ...flag,
+          model,
+          interaction: flag.interaction ? {
+            prompt: flag.interaction.prompt,
+            response: flag.interaction.response,
+            model: flag.interaction.model,
+            exercise: flag.interaction.exercise
+          } : null
+        }
+      })
+      
+      return NextResponse.json({ flags: flagsFormatted, total: filtered.length })
     }
   }
 

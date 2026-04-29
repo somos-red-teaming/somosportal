@@ -90,7 +90,49 @@ export default function AdminConversationsPage() {
   const fetchInteractions = async () => {
     setLoading(true)
     const supabase = createClient()
-    let query = supabase
+
+    // Step 1: Get paginated session IDs with their latest timestamp
+    let sessionQuery = supabase
+      .from('interactions')
+      .select('session_id, created_at', { count: 'exact' })
+      .order('created_at', { ascending: false })
+
+    if (exerciseFilter) sessionQuery = sessionQuery.eq('exercise_id', exerciseFilter)
+    if (search) sessionQuery = sessionQuery.or(`prompt.ilike.%${search}%,response.ilike.%${search}%`)
+    if (dateFrom) sessionQuery = sessionQuery.gte('created_at', dateFrom)
+    if (dateTo) sessionQuery = sessionQuery.lte('created_at', dateTo + 'T23:59:59')
+
+    const { data: allRows } = await sessionQuery
+
+    // Group to get unique sessions with latest date and count
+    const sessionMap: Record<string, { created_at: string; count: number }> = {}
+    ;(allRows || []).forEach(row => {
+      if (!sessionMap[row.session_id]) {
+        sessionMap[row.session_id] = { created_at: row.created_at, count: 0 }
+      }
+      sessionMap[row.session_id].count++
+      if (row.created_at > sessionMap[row.session_id].created_at) {
+        sessionMap[row.session_id].created_at = row.created_at
+      }
+    })
+
+    const sortedSessions = Object.entries(sessionMap)
+      .sort(([, a], [, b]) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+    setTotal(sortedSessions.length)
+    const pageSessionIds = sortedSessions
+      .slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+      .map(([id]) => id)
+
+    if (pageSessionIds.length === 0) {
+      setConversations([])
+      setAllData([])
+      setLoading(false)
+      return
+    }
+
+    // Step 2: Fetch full interactions only for current page sessions
+    const { data } = await supabase
       .from('interactions')
       .select(`
         id, session_id, prompt, response, token_count, created_at, exercise_id, model_id,
@@ -98,16 +140,10 @@ export default function AdminConversationsPage() {
         model:ai_models(name, display_name, temperature),
         exercise:exercises(title)
       `)
+      .in('session_id', pageSessionIds)
       .order('created_at', { ascending: false })
 
-    if (exerciseFilter) query = query.eq('exercise_id', exerciseFilter)
-    if (search) query = query.or(`prompt.ilike.%${search}%,response.ilike.%${search}%`)
-    if (dateFrom) query = query.gte('created_at', dateFrom)
-    if (dateTo) query = query.lte('created_at', dateTo + 'T23:59:59')
-
-    const { data } = await query
-    
-    // Fetch temperature overrides from exercise_models
+    // Fetch temperature overrides
     const { data: overrides } = await supabase
       .from('exercise_models')
       .select('exercise_id, model_id, temperature_override')
@@ -117,7 +153,6 @@ export default function AdminConversationsPage() {
       overrideMap[`${o.exercise_id}-${o.model_id}`] = o.temperature_override
     })
     
-    // Add override to each interaction, flatten array relations
     const dataWithOverrides = (data || []).map(i => ({
       ...i,
       user: Array.isArray(i.user) ? i.user[0] || null : i.user,
@@ -128,7 +163,7 @@ export default function AdminConversationsPage() {
     
     setAllData(dataWithOverrides)
     
-    // Group by session_id into full conversations
+    // Group by session_id
     const groups: Record<string, ConversationGroup> = {}
     ;dataWithOverrides.forEach(i => {
       if (!groups[i.session_id]) {
@@ -147,13 +182,13 @@ export default function AdminConversationsPage() {
       groups[i.session_id].messages.push(i)
       groups[i.session_id].message_count++
     })
+
+    // Use the pre-sorted order from sessionMap
+    const grouped = pageSessionIds
+      .map(id => groups[id])
+      .filter(Boolean)
     
-    const grouped = Object.values(groups).sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )
-    
-    setTotal(grouped.length)
-    setConversations(grouped.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE))
+    setConversations(grouped)
     setLoading(false)
   }
 
