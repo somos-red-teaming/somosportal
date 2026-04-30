@@ -594,12 +594,10 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
         if (data.creditsRemaining !== null && data.creditsRemaining !== undefined) {
           onCreditsUpdate?.(data.creditsRemaining)
         }
-        // Fetch follow-up suggestions in background (skip if AI leaked identity or refused)
-        const lower = data.response.content.toLowerCase()
-        const leaked = ['i\'m claude', 'i am claude', 'made by anthropic', 'i\'m gpt', 'i am gpt', 'made by openai', 'i\'m gemini', 'made by google', 'can\'t discuss my system', 'cannot discuss my system']
-        if (!leaked.some(phrase => lower.includes(phrase))) {
-          fetchSuggestions(data.response.content, userPromptForSuggestions)
-        }
+        // Suggestions disabled — biases the human red-teaming process
+        // const lower = data.response.content.toLowerCase()
+        // const leaked = [...]
+        // if (!leaked.some(...)) fetchSuggestions(...)
       } else {
         const errorMessage: Message = {
           id: `error-${Date.now()}`,
@@ -796,7 +794,7 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
           {/* History dropdown */}
           <DropdownMenu open={showHistory} onOpenChange={setShowHistory}>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline" className="h-8 px-2 flex-shrink-0 gap-1 cursor-pointer" title="Conversation history">
+              <Button size="sm" variant="outline" className="h-8 px-2 flex-shrink-0 gap-1 cursor-pointer text-blue-600 border-blue-300 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-700 dark:hover:bg-blue-900/30" title="Conversation history">
                 <History className="h-3.5 w-3.5" />
                 <span className="text-xs">History{sessions.length > 0 ? ` (${sessions.length})` : ''}</span>
               </Button>
@@ -1093,42 +1091,7 @@ export function ChatBox({ modelName, modelId, exerciseId, userId, onSendMessage,
       </div>
 
       {/* Prompt Suggestions */}
-      {suggestions.length > 0 && !isLoading && (
-        <div className="px-2 sm:px-3 py-1.5 flex flex-wrap gap-1.5">
-          {suggestions.map((s, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                const fakeMsg = s
-                setSuggestions([])
-                const userMsg: Message = { id: `user-${Date.now()}`, type: 'user', content: fakeMsg, timestamp: new Date() }
-                setMessages(prev => [...prev, userMsg])
-                setIsLoading(true)
-                fetch('/api/ai/chat', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    exerciseId, modelId, prompt: fakeMsg, userId, conversationId: sessionId,
-                    history: [...messages, userMsg].map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: m.content }))
-                  }),
-                }).then(r => r.json()).then(data => {
-                  if (data.success) {
-                    setMessages(prev => [...prev, { id: `ai-${Date.now()}`, type: 'ai' as const, content: data.response.content, timestamp: new Date() }])
-                    const lower = data.response.content.toLowerCase()
-                    const leaked = ['i\'m claude', 'i am claude', 'made by anthropic', 'i\'m gpt', 'i am gpt', 'made by openai', 'i\'m gemini', 'made by google', 'can\'t discuss my system', 'cannot discuss my system']
-                    if (!leaked.some(phrase => lower.includes(phrase))) {
-                      fetchSuggestions(data.response.content, fakeMsg)
-                    }
-                  }
-                }).catch(() => {}).finally(() => setIsLoading(false))
-              }}
-              className="flex-shrink-0 text-xs px-3 py-1.5 rounded-full border border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer transition-colors"
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Prompt suggestions disabled — biases human red-teaming process */}
 
       {/* Input Area - Fixed size at bottom with mobile optimizations */}
       <div className="border-t p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-b-lg flex-shrink-0 min-h-[60px] sm:min-h-[80px]">
