@@ -32,6 +32,7 @@ interface ConstellationGraphProps {
   nodes: NodeData[]
   links: LinkData[]
   onClusterClick?: (category: string) => void
+  onNodeClick?: (node: any) => void
 }
 
 // SOMOS brand palette for clusters
@@ -72,7 +73,7 @@ const STARFIELD_SVG = `
 
 const STARFIELD_TEXTURE = `url("data:image/svg+xml,${encodeURIComponent(STARFIELD_SVG)}")`
 
-export default function ConstellationGraph({ clusters, nodes, links, onClusterClick }: ConstellationGraphProps) {
+export default function ConstellationGraph({ clusters, nodes, links, onClusterClick, onNodeClick }: ConstellationGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
@@ -328,6 +329,12 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
           .attr('fill-opacity', 0.8)
         tooltip.style('display', 'none')
       })
+      .on('click', (event, d) => {
+        event.stopPropagation()
+        tooltip.style('display', 'none')
+        onNodeClick?.(d)
+      })
+      .style('cursor', 'pointer')
 
     // Cluster glows + labels
     const clusterLayer = zoomGroup.append('g')
@@ -407,7 +414,7 @@ export default function ConstellationGraph({ clusters, nodes, links, onClusterCl
     simulation.alpha(0.8).alphaDecay(0.02)
 
     return () => { simulation.stop() }
-  }, [clusters, nodes, links, onClusterClick])
+  }, [clusters, nodes, links, onClusterClick, onNodeClick])
 
   useEffect(() => {
     const cleanup = render()

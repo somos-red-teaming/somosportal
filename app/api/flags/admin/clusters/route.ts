@@ -26,20 +26,7 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  // Get cluster summaries (aggregated by category)
-  // First get interaction IDs for the exercise filter if needed
-  let interactionIds: string[] | null = null
-  if (exerciseId) {
-    const { data: interactions } = await supabase
-      .from('interactions')
-      .select('id')
-      .eq('exercise_id', exerciseId)
-    interactionIds = interactions?.map(i => i.id) || []
-    if (interactionIds.length === 0) {
-      return NextResponse.json({ clusters: [], nodes: [], links: [] })
-    }
-  }
-
+  // Get flags, optionally filtered by exercise
   let clusterQuery = supabase
     .from('flags')
     .select(`
@@ -48,6 +35,9 @@ export async function GET(request: Request) {
       severity,
       status,
       evidence,
+      description,
+      interaction_id,
+      user:users!flags_user_id_fkey(full_name, email),
       interaction:interactions(
         exercise_id,
         model_id,
@@ -59,16 +49,17 @@ export async function GET(request: Request) {
     `)
     .order('severity', { ascending: false })
 
-  if (interactionIds) {
-    clusterQuery = clusterQuery.in('interaction_id', interactionIds)
-  }
-
   const { data: flags, error } = await clusterQuery
 
   if (error) {
     console.error('Error fetching cluster data:', error)
     return NextResponse.json({ clusters: [], nodes: [], links: [] })
   }
+
+  // Filter by exercise client-side to avoid URL length limits with .in()
+  const filteredFlags = exerciseId
+    ? (flags || []).filter((f: any) => f.interaction?.exercise_id === exerciseId)
+    : (flags || [])
 
   // Build clusters by category, capping nodes per cluster
   const categoryMap = new Map<string, {
@@ -78,7 +69,7 @@ export async function GET(request: Request) {
     severitySum: number
   }>()
 
-  for (const flag of flags || []) {
+  for (const flag of filteredFlags) {
     // Expand categories array from evidence, fallback to flag.category
     const categories: string[] = flag.evidence?.categories?.length
       ? flag.evidence.categories
@@ -113,10 +104,14 @@ export async function GET(request: Request) {
       category,
       severity: flag.severity || 1,
       status: flag.status,
-      modelName: (flag.interaction as any)?.model?.name || 'Unknown',
+      modelName: (flag.interaction as any)?.model?.display_name || (flag.interaction as any)?.model?.name || 'Unknown',
       exerciseTitle: (flag.interaction as any)?.exercise?.title || 'Unknown',
       promptPreview: ((flag.interaction as any)?.prompt || '').slice(0, 100),
       responsePreview: ((flag.interaction as any)?.response || '').slice(0, 100),
+      prompt: (flag.interaction as any)?.prompt || '',
+      response: (flag.interaction as any)?.response || '',
+      flagDescription: flag.description || flag.evidence?.description || '',
+      userName: (flag.user as any)?.full_name || (flag.user as any)?.email || 'Anonymous',
     }))
   )
 

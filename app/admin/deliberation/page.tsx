@@ -27,6 +27,10 @@ interface NodeData {
   exerciseTitle: string
   promptPreview: string
   responsePreview: string
+  prompt: string
+  response: string
+  flagDescription: string
+  userName: string
 }
 
 interface LinkData {
@@ -92,6 +96,7 @@ export default function DeliberationPage() {
   const [loading, setLoading] = useState(true)
   const [fullscreen, setFullscreen] = useState(false)
   const [selectedCluster, setSelectedCluster] = useState<string | null>(null)
+  const [selectedNode, setSelectedNode] = useState<NodeData | null>(null)
 
   useEffect(() => {
     fetchExercises()
@@ -150,6 +155,18 @@ export default function DeliberationPage() {
   const exerciseSelectValue = exerciseId || 'all'
   const selectedClusterData = selectedCluster ? clusters.find(c => c.id === selectedCluster) || null : null
   const selectedClusterNodes = selectedCluster ? nodes.filter(n => n.category === selectedCluster) : []
+
+  // Node detail navigation
+  const clusterNodesForNav = selectedNode ? nodes.filter(n => n.category === selectedNode.category) : []
+  const currentNodeIndex = selectedNode ? clusterNodesForNav.findIndex(n => n.id === selectedNode.id) : -1
+  const navigateNode = (direction: 'prev' | 'next') => {
+    if (clusterNodesForNav.length === 0) return
+    const newIndex = direction === 'prev'
+      ? (currentNodeIndex - 1 + clusterNodesForNav.length) % clusterNodesForNav.length
+      : (currentNodeIndex + 1) % clusterNodesForNav.length
+    setSelectedNode(clusterNodesForNav[newIndex])
+  }
+
   const severityBuckets = selectedClusterNodes.reduce<Record<SeverityBucketKey, number>>(
     (acc, node) => {
       if (node.severity >= 8) acc.critical++
@@ -327,6 +344,7 @@ export default function DeliberationPage() {
               nodes={visibleNodes}
               links={visibleLinks}
               onClusterClick={handleClusterClick}
+              onNodeClick={(node) => setSelectedNode(node)}
             />
           </div>
 
@@ -402,7 +420,7 @@ export default function DeliberationPage() {
                       <p className="text-sm text-white/50">No nodes within this cluster yet.</p>
                     )}
                     {highlightedNodes.map(node => (
-                      <div key={node.id} className="rounded-2xl border border-white/10 bg-white/5 p-3 space-y-2">
+                      <div key={node.id} className="rounded-2xl border border-white/10 bg-white/5 p-3 space-y-2 cursor-pointer hover:bg-white/10 transition-colors" onClick={() => setSelectedNode(node)}>
                         <div className="flex items-center justify-between text-xs text-white/60">
                           <span>Severity {node.severity}</span>
                           <span className="uppercase tracking-wide">{node.status}</span>
@@ -420,6 +438,60 @@ export default function DeliberationPage() {
                 </div>
               </div>
             </aside>
+          )}
+
+          {/* Node Detail Panel */}
+          {selectedNode && (
+            <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setSelectedNode(null)}>
+              <div className="bg-[#0e0e1a] text-white rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden border border-white/10" onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 border-b border-white/10">
+                  <div className="flex items-center gap-3">
+                    <span className={`text-lg font-bold ${selectedNode.severity >= 8 ? 'text-red-400' : selectedNode.severity >= 5 ? 'text-yellow-400' : 'text-green-400'}`}>
+                      {selectedNode.severity}/10
+                    </span>
+                    <span className="text-sm text-white/60">{categoryLabels[selectedNode.category] || selectedNode.category}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => navigateNode('prev')} className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-xs">← Prev</button>
+                    <span className="text-xs text-white/40">{currentNodeIndex + 1}/{clusterNodesForNav.length}</span>
+                    <button onClick={() => navigateNode('next')} className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-xs">Next →</button>
+                    <button onClick={() => setSelectedNode(null)} className="ml-2 px-2 py-1 rounded bg-white/10 hover:bg-white/20 text-xs">✕</button>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-4 overflow-y-auto max-h-[calc(85vh-60px)] space-y-4">
+                  {/* Meta */}
+                  <div className="flex flex-wrap gap-3 text-xs text-white/50">
+                    <span>Model: {selectedNode.modelName}</span>
+                    <span>Exercise: {selectedNode.exerciseTitle}</span>
+                    <span>By: {selectedNode.userName}</span>
+                    <span className="uppercase">{selectedNode.status}</span>
+                  </div>
+
+                  {/* Flag Description */}
+                  {selectedNode.flagDescription && (
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-white/40 mb-1">Flag Description</p>
+                      <p className="text-sm text-white/80 bg-white/5 rounded-xl p-3">{selectedNode.flagDescription}</p>
+                    </div>
+                  )}
+
+                  {/* User Prompt */}
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-white/40 mb-1">User Prompt</p>
+                    <div className="text-sm text-white/80 bg-white/5 rounded-xl p-3 whitespace-pre-wrap">{selectedNode.prompt || selectedNode.promptPreview || 'No prompt data'}</div>
+                  </div>
+
+                  {/* AI Response */}
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-white/40 mb-1">AI Response</p>
+                    <div className="text-sm text-white/80 bg-white/5 rounded-xl p-3 whitespace-pre-wrap max-h-64 overflow-y-auto">{selectedNode.response || selectedNode.responsePreview || 'No response data'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
 
