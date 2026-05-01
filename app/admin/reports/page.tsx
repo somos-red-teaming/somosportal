@@ -135,7 +135,7 @@ export default function ReportsPage() {
   }
 
   // Chart data
-  const flagsByCategory = report?.subtotals.map(s => ({
+  const flagsByCategory = report?.subtotals?.map(s => ({
     name: categoryLabels[s.category] || s.category,
     count: s.totalFlags,
   })) || []
@@ -170,19 +170,19 @@ export default function ReportsPage() {
         <Header />
         <div className="container mx-auto px-4 py-8 max-w-7xl">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-8">
-            <div className="flex items-center gap-4 w-full sm:w-auto">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
+            <div className="flex items-center gap-4 sm:flex-1">
               <Button variant="ghost" size="icon" asChild><Link href="/admin"><ArrowLeft className="h-4 w-4" /></Link></Button>
-              <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 flex-1" style={{ fontFamily: 'Space Grotesk' }}>
+              <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2" style={{ fontFamily: 'Space Grotesk' }}>
                 <FileText className="h-6 w-6 sm:h-7 sm:w-7 text-[#F3D59D]" /> Governance Report
               </h1>
             </div>
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <select value={exerciseId} onChange={e => setExerciseId(e.target.value)} className="bg-[#171f33] border border-white/10 rounded-lg px-3 py-2 text-sm flex-1 sm:flex-none min-w-0">
-                <option value="">Select Exercise...</option>
-                <option value="all">All Exercises</option>
-                {exercises.map(ex => <option key={ex.id} value={ex.id}>{ex.title}</option>)}
-              </select>
+            <select value={exerciseId} onChange={e => setExerciseId(e.target.value)} className="bg-[#171f33] border border-white/10 rounded-lg px-3 py-2 text-sm w-full sm:w-auto">
+              <option value="">Select Exercise...</option>
+              <option value="all">All Exercises</option>
+              {exercises.map(ex => <option key={ex.id} value={ex.id}>{ex.title}</option>)}
+            </select>
+            <div className="flex flex-wrap items-center gap-2">
               <Button variant="outline" size="sm" onClick={fetchReport} disabled={loading} className="border-white/10">
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
@@ -249,7 +249,8 @@ export default function ReportsPage() {
                 <div className="p-4 border-b border-white/10 flex items-center gap-2">
                   <h2 className="text-xl font-semibold" style={{ fontFamily: 'Space Grotesk' }}>Severity Contrasts</h2>
                 </div>
-                <table className="w-full text-left">
+                <div className="overflow-x-auto">
+                <table className="w-full text-left min-w-[600px]">
                   <thead><tr className="bg-white/5 text-xs uppercase tracking-wider text-white/50">
                     <th className="px-6 py-3">Category</th><th className="px-6 py-3">Min</th><th className="px-6 py-3">Max</th><th className="px-6 py-3">Avg</th><th className="px-6 py-3">Spread</th><th className="px-6 py-3">Flags</th>
                   </tr></thead>
@@ -266,6 +267,7 @@ export default function ReportsPage() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </section>
 
               {/* Section 2: Harm Classification Trends */}
@@ -318,7 +320,8 @@ export default function ReportsPage() {
                 <div className="p-4 border-b border-white/10">
                   <h3 className="text-lg font-semibold" style={{ fontFamily: 'Space Grotesk' }}>Global Metric Subtotals</h3>
                 </div>
-                <table className="w-full text-left">
+                <div className="overflow-x-auto">
+                <table className="w-full text-left min-w-[600px]">
                   <thead><tr className="bg-white/5 text-xs uppercase tracking-wider text-white/50">
                     <th className="px-6 py-3">Category</th><th className="px-6 py-3">Total Flags</th><th className="px-6 py-3">Avg Severity</th>
                     {report.modelNames.map(n => <th key={n} className="px-6 py-3 border-l border-white/5">{n} Distribution</th>)}
@@ -339,6 +342,7 @@ export default function ReportsPage() {
                     })}
                   </tbody>
                 </table>
+                </div>
               </section>
 
               {/* Section 5: Per-Model Comparison */}
@@ -473,7 +477,7 @@ export default function ReportsPage() {
               {/* AI Summary */}
               {summary && (
                 <section ref={summaryRef} className="rounded-2xl p-8 relative overflow-hidden" style={{ background: '#0F172A', border: '2px solid rgba(243,213,157,0.4)', boxShadow: '0 0 50px rgba(243,213,157,0.1)' }}>
-                  <div className="flex justify-between items-start mb-6">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <Badge className="bg-[#F3D59D] text-[#0b1326] text-[10px] font-bold uppercase tracking-widest">AI Governance Summary</Badge>
