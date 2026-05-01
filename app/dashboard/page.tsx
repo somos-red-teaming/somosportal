@@ -121,6 +121,9 @@ export default function DashboardPage() {
                     Backups
                   </Link>
                 </Button>
+                <Button variant="outline" asChild className="w-full lg:w-auto">
+                  <Link href="/admin/reports">Reports</Link>
+                </Button>
               </CardContent>
             </Card>
           )}

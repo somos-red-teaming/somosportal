@@ -7,7 +7,7 @@ import { Header } from '@/components/header'
 import { AdminRoute } from '@/components/AdminRoute'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import { Users, FileText, Flag, Activity, Bot, Code, TestTube, Download, MessageSquare, UsersRound, Sparkles, Database } from 'lucide-react'
+import { Users, FileText, Flag, Activity, Bot, Code, TestTube, Download, MessageSquare, UsersRound, Sparkles, Database, BarChart3 } from 'lucide-react'
 
 interface Stats {
   users: number
@@ -188,6 +188,18 @@ export default function AdminDashboard() {
           </div>
           
           <div className="mt-6 grid gap-6 md:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Governance Reports
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">AI-generated reports with severity analysis, trends, and model comparison.</p>
+                <Button asChild><Link href="/admin/reports">View Reports</Link></Button>
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
